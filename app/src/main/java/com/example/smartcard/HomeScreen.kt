@@ -308,7 +308,7 @@ private fun BigFeatureCard(
 }
 
 @Composable
-private fun BottomNavBar(
+fun BottomNavBar(
     onHome: () -> Unit,
     onBag: () -> Unit,
     onCart: () -> Unit,

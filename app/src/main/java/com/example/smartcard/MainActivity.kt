@@ -84,17 +84,37 @@ class MainActivity : ComponentActivity() {
                         onReceiptClick = { /*TODO*/ },
                         onProductsPurchasedClick = { /*TODO*/ },
                         onBottomHome = { /* already */ },
-                        onBottomBag = { /*TODO*/ },
+                        onBottomBag = { navController.navigate(Screen.Cart.route) {
+                            popUpTo(Screen.Camera.route) { inclusive = true }
+                        }},
                         onBottomCart = { /*TODO*/ },
                         onBottomHistory = { /*TODO*/ }
                     )
                 }
+
+
                 composable(Screen.Camera.route) {
                     CameraScreen(
                         onBack = { navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.Login.route) { inclusive = true }
                             }
+                        },
+                        onProductFoundGoCart = {
+                            navController.navigate(Screen.Cart.route) {
+                                popUpTo(Screen.Camera.route) { inclusive = true }
+                            }
                         }
+                    )
+                }
+
+                composable(Screen.Cart.route) {
+                    CartScreen(
+                        onBack = { navController.popBackStack() },
+                        onGoPayment = { /* TODO позже */ },
+                        onBottomHome = { navController.navigate(Screen.Home.route) },
+                        onBottomBag = { /* TODO */ },
+                        onBottomCart = { /* already */ },
+                        onBottomHistory = { /* TODO */ }
                     )
                 }
             }

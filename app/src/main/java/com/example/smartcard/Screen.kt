@@ -6,5 +6,7 @@ sealed class Screen(val route: String) {
 
     object Home : Screen("home")
 
-    object Camera : Screen("camera") // ✅ добавили
+    object Camera : Screen("camera")
+
+    data object Cart : Screen("cart")
 }

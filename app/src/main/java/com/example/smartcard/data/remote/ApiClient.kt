@@ -12,7 +12,7 @@ object ApiClient {
     // private const val BASE_URL = "http://10.0.2.2:8001/"
     //
     // Если работает твой IP:
-    private const val BASE_URL = "http://10.60.35.110:8001/"
+    private const val BASE_URL = "http://10.5.5.20:8001/"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
                     HomeScreen(
                         userFullName = UserSession.fullName,
                         onProfileClick = { /*TODO*/ },
-                        onScanProductClick = { /*TODO*/ },
+                        onScanProductClick = { navController.navigate(Screen.Camera.route) },
                         onReceiptClick = { /*TODO*/ },
                         onProductsPurchasedClick = { /*TODO*/ },
                         onBottomHome = { /* already */ },
@@ -89,6 +89,13 @@ class MainActivity : ComponentActivity() {
                         onBottomHistory = { /*TODO*/ }
                     )
                 }
+                composable(Screen.Camera.route) {
+                    CameraScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+
             }
 
         }

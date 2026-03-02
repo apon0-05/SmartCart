@@ -13,9 +13,4 @@ interface AuthApi {
     @POST("auth/login")
     suspend fun login(@Body req: LoginRequest): AuthResponse
 
-    @GET("products/by-barcode/{barcode}")
-    suspend fun getProduct(
-        @Path("barcode") barcode: String
-    ): ProductResponse
-
 }

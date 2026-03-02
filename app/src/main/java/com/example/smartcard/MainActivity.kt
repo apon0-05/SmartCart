@@ -91,13 +91,13 @@ class MainActivity : ComponentActivity() {
                 }
                 composable(Screen.Camera.route) {
                     CameraScreen(
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                            }
+                        }
                     )
                 }
-
-
             }
-
         }
     }
 }

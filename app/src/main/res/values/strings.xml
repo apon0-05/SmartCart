@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SmartCard</string>
+    <string name="default_web_client_id">1:642371715222:android:4fa0567cba85aed98cc2b7</string>
+
 </resources>

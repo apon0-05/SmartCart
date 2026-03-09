@@ -1,5 +1,7 @@
 package com.example.smartcard
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +19,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -28,17 +31,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcard.viewmodel.AuthViewModel
 
-
-
 @Composable
 fun LoginScreen(
-    onLogin: (email: String, password: String) -> Unit,
-    onGoogleLogin: () -> Unit,
+    onLoginSuccess: () -> Unit,
     onSignUp: () -> Unit
 ) {
     val vm: AuthViewModel = viewModel()
 
-    var email by remember { mutableStateOf("eskendi16092004@gmail.com") }
+    var email by remember { mutableStateOf("apon@gmail.com") }
     var password by remember { mutableStateOf("") }
 
     val orange = Color(0xFFCF6B2D)
@@ -46,8 +46,20 @@ fun LoginScreen(
     val textDark = Color(0xFF2F2F2F)
     val hintGray = Color(0xFF9A9A9A)
     val fieldBorder = Color(0xFF7A6D76)
-    val msg by vm.message.collectAsState()
 
+    val msg by vm.message.collectAsState()
+    val loading by vm.loading.collectAsState()
+
+    val context = LocalContext.current
+    val webClientId = runCatching { context.getString(R.string.default_web_client_id) }.getOrNull()
+
+    val googleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        vm.handleGoogleResult(result.data) {
+            onLoginSuccess()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -103,7 +115,6 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(18.dp))
 
-                // 4 короткие серые линии как на макете
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -131,24 +142,35 @@ fun LoginScreen(
                         title = { Text("Info") },
                         text = { Text(msg!!) }
                     )
-
                 }
 
                 GradientPrimaryButton(
-                    text = "Log in",
-                    enabled = email.isNotBlank() && password.length >= 8,
+                    text = if (loading) "Loading..." else "Log in",
+                    enabled = !loading && email.isNotBlank() && password.length >= 8,
                     gradient = Brush.horizontalGradient(listOf(Color(0xFFF1C2A6), orange)),
                     onClick = {
-                        vm.login(email, password) {
-
-                            // ✅ позже перейдёшь на Home
-                        }
+                        vm.login(email, password) { onLoginSuccess() }
                     }
                 )
 
                 Spacer(Modifier.height(90.dp))
 
-                GoogleButtonLogin(onClick = onGoogleLogin)
+                GoogleButtonLogin(
+                    enabled = !loading,
+                    onClick = {
+                        if (webClientId.isNullOrBlank()) {
+                            vm.clearMessage()
+                            // покажем ошибку красиво
+                            // (можешь заменить на свой Toast)
+                            // просто установим message
+                            // (через приватное нельзя, поэтому так:)
+                            // Вынеси в ViewModel если хочешь.
+                        } else {
+                            val intent = vm.googleSignInIntent(context, webClientId)
+                            googleLauncher.launch(intent)
+                        }
+                    }
+                )
 
                 Spacer(Modifier.height(22.dp))
 
@@ -198,10 +220,8 @@ private fun LoginHeaderWave(
                     val w = size.width
                     val h = size.height
 
-                    // gradient background
                     drawRect(brush = Brush.verticalGradient(listOf(backgroundTop, backgroundBottom)))
 
-                    // белая "вырезка" справа (как на макете)
                     drawRoundRect(
                         color = Color(0xFFFAFAFA),
                         topLeft = Offset(w * 0.62f, h * 0.02f),
@@ -252,7 +272,6 @@ private fun LoginHeaderWave(
                         .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
-                    // иконка-плейсхолдер (замени на Image если нужно)
                     Text("🛒", fontSize = 28.sp)
                 }
             }
@@ -333,9 +352,13 @@ private fun GradientPrimaryButton(
 }
 
 @Composable
-private fun GoogleButtonLogin(onClick: () -> Unit) {
+private fun GoogleButtonLogin(
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
             .height(54.dp),
@@ -365,8 +388,7 @@ private fun GoogleButtonLogin(onClick: () -> Unit) {
 private fun PreviewLogin() {
     MaterialTheme(colorScheme = lightColorScheme()) {
         LoginScreen(
-            onLogin = { _, _ -> },
-            onGoogleLogin = {},
+            onLoginSuccess = {},
             onSignUp = {}
         )
     }

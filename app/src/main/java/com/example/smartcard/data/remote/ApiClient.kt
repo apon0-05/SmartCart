@@ -23,17 +23,13 @@ object ApiClient {
         .addInterceptor(logging)
         .build()
 
-    val authApi: AuthApi = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .client(http)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-        .create(AuthApi::class.java)
-
     private val retrofit: Retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(http)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
+
+    val authApi: AuthApi = retrofit.create(AuthApi::class.java)
     val productApi: ProductApi = retrofit.create(ProductApi::class.java)
+    val purchaseApi: PurchaseApi = retrofit.create(PurchaseApi::class.java)
 }

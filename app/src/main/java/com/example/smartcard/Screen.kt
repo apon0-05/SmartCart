@@ -9,4 +9,10 @@ sealed class Screen(val route: String) {
     object Camera : Screen("camera")
 
     data object Cart : Screen("cart")
+
+    object SuccessPayment : Screen("success_payment")
+
+    object Receipt : Screen("receipt/{id}") {
+        fun create(id: Int) = "receipt/$id"
+    }
 }

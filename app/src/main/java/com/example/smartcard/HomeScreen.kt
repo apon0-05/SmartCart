@@ -7,6 +7,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +41,40 @@ fun HomeScreen(
     val softBlue = Color(0xFFE8F0FF)
     val softOrange = Color(0xFFFFE9DF)
     val softMint = Color(0xFFE6F7F1)
+
+    val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+    var purchaseCount by remember { mutableStateOf(0) }
+    var isLoadingPurchases by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        val user = auth.currentUser
+
+        if (user != null) {
+            db.collection("users")
+                .document(user.uid)
+                .collection("purchases")
+                .get()
+                .addOnSuccessListener { result ->
+                    purchaseCount = result.size()
+                    isLoadingPurchases = false
+                }
+                .addOnFailureListener {
+                    purchaseCount = 0
+                    isLoadingPurchases = false
+                }
+        } else {
+            purchaseCount = 0
+            isLoadingPurchases = false
+        }
+    }
+
+    val purchasesText = when (purchaseCount) {
+        1 -> "1 purchase"
+        else -> "$purchaseCount purchases"
+    }
+
 
     Box(
         modifier = Modifier
@@ -189,7 +228,7 @@ fun HomeScreen(
                 iconBg = softMint,
                 icon = "✅",
                 title = "Products purchased",
-                subtitle = "164 purchases",
+                subtitle = if (isLoadingPurchases) "Loading..." else purchasesText,
                 onClick = onProductsPurchasedClick
             )
 

@@ -24,3 +24,10 @@ data class Product(
     val barcode: String = ""
 )
 
+data class PurchaseHistoryItem(
+    val receiptId: String = "",
+    val purchaseTime: String = "",
+    val totalAmount: Double = 0.0,
+    val totalItems: Int = 0,
+    val items: List<Map<String, Any>> = emptyList()
+)

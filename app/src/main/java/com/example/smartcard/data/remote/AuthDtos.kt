@@ -16,3 +16,11 @@ data class AuthResponse(
     val full_name: String,
     val email: String
 )
+
+data class Product(
+    val name: String = "",
+    val brand: String = "",
+    val price: Double = 0.0,
+    val barcode: String = ""
+)
+

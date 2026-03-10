@@ -45,7 +45,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.camera.core)
-    implementation(libs.firebase.auth.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -58,7 +58,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
@@ -69,8 +68,10 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+
+    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
 }

@@ -329,7 +329,7 @@ fun BottomNavBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         BottomIcon(activeBg = true, icon = "🏠", tint = active, onClick = onHome)
-        BottomIcon(activeBg = false, icon = "👜", tint = inactive, onClick = onBag)
+        BottomIcon(activeBg = false, icon = "📷", tint = inactive, onClick = onBag)
         BottomIcon(activeBg = false, icon = "🛒", tint = inactive, onClick = onCart)
         BottomIcon(activeBg = false, icon = "🕘", tint = inactive, onClick = onHistory)
     }

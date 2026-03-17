@@ -21,7 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun CartScreen(
@@ -248,7 +249,19 @@ private fun CartRow(
                 .background(cardBg),
             contentAlignment = Alignment.Center
         ) {
-            Text(item.imageEmoji, fontSize = 22.sp)
+            if (item.imageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = item.imageEmoji,
+                    fontSize = 22.sp
+                )
+            }
         }
 
         Spacer(Modifier.width(12.dp))

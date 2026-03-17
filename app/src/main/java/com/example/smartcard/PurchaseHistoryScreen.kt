@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.example.smartcard.data.remote.PurchaseHistoryItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 @Composable
 fun PurchaseHistoryScreen(
     onBack: () -> Unit,
@@ -184,7 +185,9 @@ private fun PurchaseHistoryCard(
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 purchase.items.take(4).forEach { item ->
+                    val imageUrl = item["imageUrl"] as? String ?: ""
                     val emoji = item["imageEmoji"] as? String ?: "🛍️"
+
                     Box(
                         modifier = Modifier
                             .size(26.dp)
@@ -192,7 +195,19 @@ private fun PurchaseHistoryCard(
                             .background(Color(0xFFF4F4F4)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(emoji, fontSize = 14.sp)
+                        if (imageUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = "purchase item image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text(
+                                text = if (emoji.isNotBlank()) emoji else "🛍️",
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }

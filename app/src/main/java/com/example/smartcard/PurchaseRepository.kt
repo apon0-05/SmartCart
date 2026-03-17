@@ -45,6 +45,7 @@ object PurchaseRepository {
                 "barcode" to item.barcode,
                 "price" to item.price,
                 "quantity" to item.qty,
+                "imageUrl" to item.imageUrl,
                 "imageEmoji" to item.imageEmoji
             )
         }

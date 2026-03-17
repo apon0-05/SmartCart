@@ -17,7 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 @Composable
 fun PurchaseDetailScreen(
     receiptId: String,
@@ -179,6 +180,7 @@ private fun PurchaseDetailRow(
     item: Map<String, Any>,
     textDark: Color
 ) {
+    val imageUrl = item["imageUrl"] as? String ?: ""
     val emoji = item["imageEmoji"] as? String ?: "🛍️"
     val name = item["name"] as? String ?: ""
     val quantity = (item["quantity"] as? Number)?.toInt() ?: 0
@@ -196,7 +198,19 @@ private fun PurchaseDetailRow(
                 .background(Color(0xFFF4F4F4)),
             contentAlignment = Alignment.Center
         ) {
-            Text(emoji, fontSize = 24.sp)
+            if (imageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = if (emoji.isNotBlank()) emoji else "🛍️",
+                    fontSize = 24.sp
+                )
+            }
         }
 
         Spacer(Modifier.width(12.dp))

@@ -36,6 +36,7 @@ object RemoteCartRepository {
                         brand = item["brand"] as? String ?: "",
                         price = ((item["price"] as? Number)?.toInt() ?: 0).toDouble(),
                         imageEmoji = item["imageEmoji"] as? String ?: "🛍️",
+                        imageUrl = item["imageUrl"] as? String ?: "",
                         qty = (item["quantity"] as? Number)?.toInt() ?: 1
                     )
                 }
@@ -57,7 +58,8 @@ object RemoteCartRepository {
                 "barcode" to item.barcode,
                 "price" to item.price,
                 "quantity" to item.qty,
-                "imageEmoji" to item.imageEmoji
+                "imageEmoji" to item.imageEmoji,
+                "imageUrl" to item.imageUrl
             )
         }
 
@@ -144,6 +146,7 @@ object RemoteCartRepository {
                             "barcode" to product.barcode,
                             "price" to product.price,
                             "quantity" to 1,
+                            "imageUrl" to "",
                             "imageEmoji" to when (product.barcode) {
                                 "1234567890123" -> "🥛"
                                 "1234567890179" -> "🧼"

@@ -199,6 +199,7 @@ fun CameraScreen(
                         }
                     }
 ////////////
+
                     try {
                         cameraProvider.unbindAll()
                         cameraProvider.bindToLifecycle(

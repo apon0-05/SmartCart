@@ -9,7 +9,8 @@ data class CartItem(
     val brand: String? = null,
     val price: Double = 0.0,          // TG
     val imageEmoji: String = "🛍️",
-    val qty: Int = 1
+    val qty: Int = 1,
+    val imageUrl: String = "",
 )
 
 object CartSession {

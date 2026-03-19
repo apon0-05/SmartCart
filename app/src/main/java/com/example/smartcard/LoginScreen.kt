@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcard.viewmodel.AuthViewModel
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -51,15 +53,10 @@ fun LoginScreen(
     val loading by vm.loading.collectAsState()
 
     val context = LocalContext.current
-    val webClientId = runCatching { context.getString(R.string.default_web_client_id) }.getOrNull()
+    val scope = rememberCoroutineScope()
 
-    val googleLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        vm.handleGoogleResult(result.data) {
-            onLoginSuccess()
-        }
-    }
+
+
 
     Box(
         modifier = Modifier
@@ -158,16 +155,16 @@ fun LoginScreen(
                 GoogleButtonLogin(
                     enabled = !loading,
                     onClick = {
-                        if (webClientId.isNullOrBlank()) {
-                            vm.clearMessage()
-                            // покажем ошибку красиво
-                            // (можешь заменить на свой Toast)
-                            // просто установим message
-                            // (через приватное нельзя, поэтому так:)
-                            // Вынеси в ViewModel если хочешь.
-                        } else {
-                            val intent = vm.googleSignInIntent(context, webClientId)
-                            googleLauncher.launch(intent)
+                        scope.launch {
+                            signInWithGoogle(
+                                context = context,
+                                onSuccess = {
+                                    onLoginSuccess()
+                                },
+                                onError = { error ->
+                                    println("Google sign-in error: $error")
+                                }
+                            )
                         }
                     }
                 )
@@ -236,12 +233,7 @@ private fun LoginHeaderWave(
                 .fillMaxSize()
                 .padding(start = 22.dp, top = 22.dp, end = 18.dp)
         ) {
-            Text(
-                text = "9:41",
-                color = Color.White.copy(alpha = 0.92f),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp
-            )
+
 
             Spacer(Modifier.height(54.dp))
 

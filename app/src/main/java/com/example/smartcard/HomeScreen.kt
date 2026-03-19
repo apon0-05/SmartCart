@@ -96,12 +96,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "9:41",
-                        color = Color(0xFF7F7F7F),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+
 
                     Spacer(Modifier.height(14.dp))
 

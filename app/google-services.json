@@ -1,73 +1,46 @@
 {
   "project_info": {
-    "project_number": "642371715222",
-    "project_id": "smartcart-95df6",
-    "storage_bucket": "smartcart-95df6.firebasestorage.app"
+    "project_number": "1090740511419",
+    "firebase_url": "https://smartcart-3dff2-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "smartcart-3dff2",
+    "storage_bucket": "smartcart-3dff2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:642371715222:android:4fa0567cba85aed98cc2b7",
+        "mobilesdk_app_id": "1:1090740511419:android:7917c5fe8086bf05aabf9e",
         "android_client_info": {
           "package_name": "com.example.smartcard"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "642371715222-qq7g6mv64fq5q5jm46acsvfmhfmt6e4j.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.smartcard",
-            "certificate_hash": "3dd79aa6e702ff387f75b99746698c83e46dcc53"
-          }
-        },
-        {
-          "client_id": "642371715222-kdj3gu1l7k2husvf021iv1uj3chjm9ut.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDjBTBfRj2-WRSTPcLEi-YEqkkNnLtkidg"
+          "current_key": "AIzaSyBWFSzgrPGQQIpJgf8YoDIcFQA8T0LgONo"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "642371715222-kdj3gu1l7k2husvf021iv1uj3chjm9ut.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:642371715222:android:079d7d802b9b9d348cc2b7",
+        "mobilesdk_app_id": "1:1090740511419:android:21517e25716d0cb9aabf9e",
         "android_client_info": {
           "package_name": "com.smartcart"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "642371715222-kdj3gu1l7k2husvf021iv1uj3chjm9ut.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDjBTBfRj2-WRSTPcLEi-YEqkkNnLtkidg"
+          "current_key": "AIzaSyBWFSzgrPGQQIpJgf8YoDIcFQA8T0LgONo"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "642371715222-kdj3gu1l7k2husvf021iv1uj3chjm9ut.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

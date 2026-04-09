@@ -185,6 +185,7 @@ fun AppNavGraph(
             val cartId = backStackEntry.arguments?.getString("cartId") ?: ""
 
             CartConnectedScreen(
+                cartId = cartId,
                 onBackHome = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
@@ -192,9 +193,5 @@ fun AppNavGraph(
                 }
             )
         }
-
-
-
-
     }
 }

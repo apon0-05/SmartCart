@@ -21,9 +21,12 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun CartConnectedScreen(
+    cartId: String,
     onBackHome: () -> Unit
 ) {
-    val cartId = CartConnectionSession.connectedCartId ?: ""
+    val resolvedCartId = cartId.takeIf { it.isNotBlank() }
+        ?: CartConnectionSession.connectedCartId
+        ?: ""
 
     Column(
         modifier = Modifier
@@ -71,7 +74,7 @@ fun CartConnectedScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Cart ID", color = Color.Gray, fontSize = 12.sp)
                 Text(
-                    text = if (cartId.isNotBlank()) cartId else "Not available",
+                    text = if (resolvedCartId.isNotBlank()) resolvedCartId else "Not available",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2F2F2F)

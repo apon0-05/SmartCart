@@ -18,9 +18,21 @@ object CartConnectionRepository {
     ) {
         val user = auth.currentUser
         if (user == null) {
+            QrFlowPhoneLog.d(
+                event = "cart_connect_failed",
+                "reason" to "user_not_logged_in",
+                "cartId" to cartId
+            )
             onError("User not logged in")
             return
         }
+
+        QrFlowPhoneLog.d(
+            event = "cart_connect_start",
+            "cartId" to cartId,
+            "userId" to user.uid,
+            "email" to (user.email ?: "")
+        )
 
         val userName = user.displayName?.takeIf { it.isNotBlank() }
             ?: user.email?.substringBefore("@")
@@ -36,6 +48,11 @@ object CartConnectionRepository {
         cartRef.get()
             .addOnSuccessListener { doc ->
                 if (!doc.exists()) {
+                    QrFlowPhoneLog.d(
+                        event = "cart_not_found",
+                        "cartId" to cartId,
+                        "userId" to user.uid
+                    )
                     onError("Cart not found")
                     return@addOnSuccessListener
                 }
@@ -63,13 +80,32 @@ object CartConnectionRepository {
                 cartRef.update(updateData)
                     .addOnSuccessListener {
                         CartConnectionSession.connectedCartId = cartId
+                        QrFlowPhoneLog.d(
+                            event = "cart_connect_success",
+                            "cartId" to cartId,
+                            "userId" to user.uid
+                        )
                         onSuccess()
                     }
                     .addOnFailureListener { e ->
+                        QrFlowPhoneLog.e(
+                            event = "exception",
+                            throwable = e,
+                            "where" to "cart_update",
+                            "cartId" to cartId,
+                            "userId" to user.uid
+                        )
                         onError(e.message ?: "Failed to connect cart")
                     }
             }
             .addOnFailureListener { e ->
+                QrFlowPhoneLog.e(
+                    event = "exception",
+                    throwable = e,
+                    "where" to "cart_load",
+                    "cartId" to cartId,
+                    "userId" to (user.uid)
+                )
                 onError(e.message ?: "Failed to load cart")
             }
     }

@@ -2,6 +2,7 @@ package com.example.smartcard
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
@@ -31,6 +32,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.launch
+import java.util.UUID
 import java.util.concurrent.Executors
 
 @OptIn(ExperimentalGetImage::class)
@@ -44,6 +47,8 @@ fun ScanCartQrScreen(
 
     var scanning by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
+
+    val scope = rememberCoroutineScope()
 
     var hasPermission by remember {
         mutableStateOf(
@@ -120,22 +125,124 @@ fun ScanCartQrScreen(
                                         for (barcode in barcodes) {
                                             val value = barcode.rawValue
                                             if (!value.isNullOrBlank()) {
+                                                Log.d(
+                                                    "QR_PHONE_SCAN",
+                                                    "raw_scanned_text=${value}"
+                                                )
+                                                QrFlowPhoneLog.d(
+                                                    event = "qr_scan_success",
+                                                    "qrRawValue" to value
+                                                )
+
+                                                val fallbackTraceId = "trace_" + UUID.randomUUID().toString()
+                                                    .replace("-", "")
+                                                    .take(8)
+
+                                                val parsed = QrPayloadParser.parse(value, fallbackTraceId)
+                                                Log.d(
+                                                    "QR_PHONE_CLASSIFIER",
+                                                    "parse_result traceId=${parsed.traceId} strategy=${parsed.parseStrategy} sessionId=${parsed.sessionId ?: ""} cartId=${parsed.cartId ?: ""}"
+                                                )
+                                                QrFlowPhoneLog.d(
+                                                    event = "qr_parse_result",
+                                                    "parseStrategy" to parsed.parseStrategy,
+                                                    "parsedSessionId" to parsed.sessionId,
+                                                    "parsedCartId" to parsed.cartId,
+                                                    "traceId" to parsed.traceId
+                                                )
+
                                                 scanning = false
 
-                                                CartConnectionRepository.connectToCart(
-                                                    cartId = value,
-                                                    onSuccess = {
-                                                        message = "Connected to $value"
-                                                        onConnected(value)
-                                                    },
-                                                    onError = { error ->
-                                                        message = error
-                                                        scanning = true
+                                                val legacyCartId = parsed.cartId
+                                                val sessionId = parsed.sessionId
+                                                val traceId = parsed.traceId
+
+                                                if (!sessionId.isNullOrBlank()) {
+                                                    scope.launch {
+                                                        Log.d(
+                                                            "QR_PHONE_CLASSIFIER",
+                                                            "classified_as_session reason=sessionId_present traceId=$traceId sessionId=$sessionId"
+                                                        )
+                                                        Log.d(
+                                                            "QR_FLOW_PHONE",
+                                                            "qr_scan_session_mode traceId=$traceId sessionId=$sessionId"
+                                                        )
+
+                                                        val result = QrSessionRepository.confirmSession(
+                                                            traceId = traceId,
+                                                            sessionId = sessionId
+                                                        )
+
+                                                        val cartId = result.getOrNull()
+                                                        if (cartId.isNullOrBlank()) {
+                                                            message = result.exceptionOrNull()?.message
+                                                                ?: "Failed to confirm session"
+                                                            scanning = true
+                                                            return@launch
+                                                        }
+
+                                                        Log.d(
+                                                            "QR_FLOW_SESSION",
+                                                            "session_confirm_success traceId=$traceId sessionId=$sessionId cartId=$cartId"
+                                                        )
+                                                        Log.d(
+                                                            "QR_FLOW_CART",
+                                                            "defer_cart_load_until_after_confirmation traceId=$traceId sessionId=$sessionId cartId=$cartId"
+                                                        )
+
+                                                        CartConnectionSession.connectedCartId = cartId
+                                                        Log.d(
+                                                            "QR_FLOW_CART",
+                                                            "phone_local_cart_binding_set traceId=$traceId cartId=$cartId"
+                                                        )
+
+                                                        message = "Session confirmed for $cartId"
+                                                        onConnected(cartId)
                                                     }
-                                                )
+                                                } else if (!legacyCartId.isNullOrBlank()) {
+                                                    Log.d(
+                                                        "QR_PHONE_CLASSIFIER",
+                                                        "classified_as_legacy_cart reason=no_sessionId_but_cartId_present traceId=$traceId cartId=$legacyCartId strategy=${parsed.parseStrategy}"
+                                                    )
+                                                    Log.d(
+                                                        "QR_FLOW_PHONE",
+                                                        "legacy_cart_qr_scanned traceId=$traceId cartId=$legacyCartId parseStrategy=${parsed.parseStrategy}"
+                                                    )
+
+                                                    Log.d(
+                                                        "QR_FLOW_CART",
+                                                        "legacy_cart_connect_path_blocked wouldHaveCalled=CartConnectionRepository.connectToCart cartId=$legacyCartId"
+                                                    )
+                                                    message = "Legacy cart QR is not supported. Scan tablet session QR."
+                                                    scanning = true
+                                                } else {
+                                                    Log.d(
+                                                        "QR_PHONE_CLASSIFIER",
+                                                        "classified_as_invalid reason=no_sessionId_and_no_cartId traceId=$traceId strategy=${parsed.parseStrategy}"
+                                                    )
+                                                    QrFlowPhoneLog.d(
+                                                        event = "qr_scan_failure",
+                                                        "reason" to "empty_parsed_values",
+                                                        "qrRawValue" to value,
+                                                        "traceId" to traceId
+                                                    )
+                                                    Log.d(
+                                                        "QR_FLOW_PHONE",
+                                                        "qr_scan_invalid traceId=$traceId reason=empty_parsed_values"
+                                                    )
+                                                    message = "Invalid QR"
+                                                    scanning = true
+                                                }
                                                 break
                                             }
                                         }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        QrFlowPhoneLog.e(
+                                            event = "qr_scan_failure",
+                                            throwable = e,
+                                            "where" to "mlkit_barcode_scan"
+                                        )
                                     }
                                     .addOnCompleteListener {
                                         imageProxy.close()

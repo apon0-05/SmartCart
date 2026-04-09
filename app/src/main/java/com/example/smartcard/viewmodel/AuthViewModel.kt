@@ -7,13 +7,16 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.example.smartcard.QrFlowPhoneLog
 
 class AuthViewModel : ViewModel() {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     private val _message = MutableStateFlow<String?>(null)
     val message = _message.asStateFlow()
@@ -40,7 +43,6 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-
     fun signUp(email: String, password: String, onSuccess: () -> Unit) {
         auth.createUserWithEmailAndPassword(email.trim(), password)
             .addOnSuccessListener { result ->
@@ -52,11 +54,54 @@ class AuthViewModel : ViewModel() {
                     .build()
 
                 user?.updateProfile(req)
-                    ?.addOnCompleteListener { onSuccess() }
-                    ?: onSuccess()
+                    ?.addOnCompleteListener {
+                        upsertUserDoc(user?.uid, user?.email, nameFromEmail)
+                        onSuccess()
+                    }
+                    ?: run {
+                        upsertUserDoc(user?.uid, user?.email, nameFromEmail)
+                        onSuccess()
+                    }
             }
             .addOnFailureListener { e ->
                 _message.value = e.message ?: "Sign up failed"
+            }
+    }
+
+    private fun upsertUserDoc(uid: String?, email: String?, name: String?) {
+        if (uid.isNullOrBlank()) return
+
+        val data = hashMapOf(
+            "uid" to uid,
+            "email" to (email ?: ""),
+            "name" to (name ?: ""),
+            "createdAt" to System.currentTimeMillis()
+        )
+
+        QrFlowPhoneLog.d(
+            event = "user_firestore_upsert_start",
+            "collection" to "users",
+            "docId" to uid
+        )
+
+        db.collection("users")
+            .document(uid)
+            .set(data)
+            .addOnSuccessListener {
+                QrFlowPhoneLog.d(
+                    event = "user_firestore_upsert_success",
+                    "collection" to "users",
+                    "docId" to uid
+                )
+            }
+            .addOnFailureListener { e ->
+                QrFlowPhoneLog.e(
+                    event = "exception",
+                    throwable = e,
+                    "where" to "user_firestore_upsert",
+                    "collection" to "users",
+                    "docId" to uid
+                )
             }
     }
 

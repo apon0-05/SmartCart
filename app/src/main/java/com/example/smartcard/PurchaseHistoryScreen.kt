@@ -16,11 +16,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.smartcard.data.remote.PurchaseHistoryItem
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import com.example.smartcard.data.remote.PurchaseHistoryItem
+import com.example.smartcard.localization.LocalAppStrings
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 @Composable
 fun PurchaseHistoryScreen(
     onBack: () -> Unit,
@@ -30,6 +32,8 @@ fun PurchaseHistoryScreen(
     onBottomCart: () -> Unit,
     onBottomHistory: () -> Unit
 ) {
+    val texts = LocalAppStrings.current
+
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
@@ -45,7 +49,7 @@ fun PurchaseHistoryScreen(
     LaunchedEffect(Unit) {
         val user = auth.currentUser
         if (user == null) {
-            error = "User not logged in"
+            error = texts.userNotLoggedIn
             isLoading = false
             return@LaunchedEffect
         }
@@ -69,7 +73,7 @@ fun PurchaseHistoryScreen(
                 isLoading = false
             }
             .addOnFailureListener { e ->
-                error = e.message ?: "Failed to load history"
+                error = e.message ?: texts.failedToLoadPurchase
                 isLoading = false
             }
     }
@@ -80,6 +84,8 @@ fun PurchaseHistoryScreen(
             .background(bg)
             .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
+
+        // BACK
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
@@ -95,19 +101,34 @@ fun PurchaseHistoryScreen(
 
         Spacer(Modifier.height(18.dp))
 
+        // TITLE
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("History", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
-            Text("Order completed", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = textDark)
+            Text(
+                text = texts.history,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = textDark
+            )
+
+            Text(
+                text = texts.orderCompleted,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = textDark
+            )
         }
 
         Spacer(Modifier.height(18.dp))
 
         when {
             isLoading -> {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator()
                 }
             }
@@ -118,7 +139,7 @@ fun PurchaseHistoryScreen(
             }
 
             purchases.isEmpty() -> {
-                Text("No purchases yet", color = hint)
+                Text(texts.noPurchases, color = hint)
                 Spacer(Modifier.weight(1f))
             }
 
@@ -133,6 +154,7 @@ fun PurchaseHistoryScreen(
                             green = green,
                             textDark = textDark,
                             hint = hint,
+                            texts = texts,
                             onClick = { onOpenPurchase(purchase.receiptId) }
                         )
                     }
@@ -155,6 +177,7 @@ private fun PurchaseHistoryCard(
     green: Color,
     textDark: Color,
     hint: Color,
+    texts: com.example.smartcard.localization.AppStrings,
     onClick: () -> Unit
 ) {
     Row(
@@ -166,25 +189,34 @@ private fun PurchaseHistoryCard(
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
+
         Column {
+
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(green)
                     .padding(horizontal = 20.dp, vertical = 2.dp)
             ) {
-                Text("Paid", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = texts.paid,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Spacer(Modifier.height(12.dp))
 
             Text(purchase.purchaseTime, color = textDark, fontSize = 14.sp)
-            Text("Almaty, Kazakhstan", color = hint, fontSize = 12.sp)
+
+            Text(texts.locationValue, color = hint, fontSize = 12.sp)
 
             Spacer(Modifier.height(8.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 purchase.items.take(4).forEach { item ->
+
                     val imageUrl = item["imageUrl"] as? String ?: ""
                     val emoji = item["imageEmoji"] as? String ?: "🛍️"
 
@@ -198,7 +230,7 @@ private fun PurchaseHistoryCard(
                         if (imageUrl.isNotBlank()) {
                             AsyncImage(
                                 model = imageUrl,
-                                contentDescription = "purchase item image",
+                                contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
@@ -214,7 +246,7 @@ private fun PurchaseHistoryCard(
         }
 
         Text(
-            text = "${purchase.totalAmount.toInt()} ₸",
+            text = "${purchase.totalAmount.toInt()} ${texts.tenge}",
             color = textDark,
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold

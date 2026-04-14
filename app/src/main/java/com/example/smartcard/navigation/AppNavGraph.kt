@@ -1,6 +1,7 @@
 package com.example.smartcard.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -13,6 +14,7 @@ import com.example.smartcard.LoginScreen
 import com.example.smartcard.ProfileScreen
 import com.example.smartcard.PurchaseDetailScreen
 import com.example.smartcard.PurchaseHistoryScreen
+import com.example.smartcard.R
 import com.example.smartcard.ReceiptScreen
 import com.example.smartcard.ScanCartQrScreen
 import com.example.smartcard.SignUpScreen
@@ -23,7 +25,8 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String
+    startDestination: String,
+    onLanguageChange: (String) -> Unit
 ) {
     val authVm: AuthViewModel = viewModel()
 
@@ -58,7 +61,7 @@ fun AppNavGraph(
             val safeName =
                 user?.displayName?.takeIf { it.isNotBlank() }
                     ?: user?.email?.substringBefore("@")
-                    ?: "User"
+                    ?: stringResource(R.string.user)
 
             HomeScreen(
                 userFullName = safeName,
@@ -66,7 +69,7 @@ fun AppNavGraph(
                 onProfileClick = { navController.navigate("profile") },
 
                 onScanProductClick = { navController.navigate(Screen.Camera.route) },
-                onReceiptClick = { navController.navigate(Screen.SuccessPayment.route) }, // или свой экран
+                onReceiptClick = { navController.navigate("history") }, // или свой экран
                 onProductsPurchasedClick = { navController.navigate("history") }, // или свой экран
 
                 onBottomHome = { /* уже Home */ },

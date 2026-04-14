@@ -16,13 +16,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartcard.localization.LocalAppStrings
 
 @Composable
 fun SuccessPaymentScreen(
     receiptId: String,
     onDownloadReceipt: (String) -> Unit,
     onBackHome: () -> Unit
-){
+) {
+    val texts = LocalAppStrings.current
+
     val bg = Color(0xFFF6F6F6)
     val textDark = Color(0xFF2F2F2F)
     val hint = Color(0xFF7A7A7A)
@@ -37,9 +40,9 @@ fun SuccessPaymentScreen(
     ) {
         Spacer(Modifier.height(18.dp))
 
-        // верхний заголовок
+        // TITLE
         Text(
-            text = "Successful ✅",
+            text = texts.successful,
             color = textDark,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 26.sp
@@ -48,7 +51,7 @@ fun SuccessPaymentScreen(
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "Your payment was completed successfully",
+            text = texts.paymentSuccessDesc,
             color = hint,
             fontSize = 14.sp,
             textAlign = TextAlign.Center
@@ -56,7 +59,7 @@ fun SuccessPaymentScreen(
 
         Spacer(Modifier.height(26.dp))
 
-        // большая иконка
+        // ICON
         Box(
             modifier = Modifier
                 .size(140.dp)
@@ -69,20 +72,22 @@ fun SuccessPaymentScreen(
 
         Spacer(Modifier.height(26.dp))
 
-        // карточка с purchase id (можно убрать, но удобно для дебага)
+        // CARD
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+
                 Text(
-                    text = "Purchase ID",
+                    text = texts.purchaseId,
                     color = hint,
                     fontSize = 12.sp
                 )
+
                 Text(
-                    text = if (receiptId.isNotBlank()) receiptId else "Not available",
+                    text = if (receiptId.isNotBlank()) receiptId else texts.notAvailable,
                     color = textDark,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
@@ -92,7 +97,7 @@ fun SuccessPaymentScreen(
 
         Spacer(Modifier.height(18.dp))
 
-        // Download receipt
+        // DOWNLOAD BUTTON
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -107,7 +112,7 @@ fun SuccessPaymentScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Download receipt",
+                text = texts.downloadReceipt,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
@@ -116,7 +121,7 @@ fun SuccessPaymentScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // Back to home
+        // BACK BUTTON
         OutlinedButton(
             onClick = onBackHome,
             modifier = Modifier
@@ -127,15 +132,15 @@ fun SuccessPaymentScreen(
                 contentColor = accent
             )
         ) {
-            Text("Back to home", fontWeight = FontWeight.Bold)
+            Text(texts.backToHome, fontWeight = FontWeight.Bold)
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // если purchaseId == 0, показываем подсказку
+        // WARNING
         if (receiptId.isBlank()) {
             Text(
-                text = "⚠️ Receipt is unavailable because purchaseId = 0.\nMake sure you save purchase_id after checkout.",
+                text = texts.receiptUnavailable,
                 color = Color.Red,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center

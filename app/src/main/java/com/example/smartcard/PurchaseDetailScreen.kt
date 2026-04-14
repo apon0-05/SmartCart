@@ -2,23 +2,40 @@ package com.example.smartcard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.smartcard.localization.LocalAppStrings
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
+
 @Composable
 fun PurchaseDetailScreen(
     receiptId: String,
@@ -28,6 +45,7 @@ fun PurchaseDetailScreen(
     onBottomCart: () -> Unit,
     onBottomHistory: () -> Unit
 ) {
+    val texts = LocalAppStrings.current
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
@@ -42,7 +60,7 @@ fun PurchaseDetailScreen(
     LaunchedEffect(receiptId) {
         val user = auth.currentUser
         if (user == null) {
-            error = "User not logged in"
+            error = texts.userNotLoggedIn
             isLoading = false
             return@LaunchedEffect
         }
@@ -56,12 +74,12 @@ fun PurchaseDetailScreen(
                 if (doc.exists()) {
                     receiptData = doc.data
                 } else {
-                    error = "Purchase not found"
+                    error = texts.purchaseNotFound
                 }
                 isLoading = false
             }
             .addOnFailureListener { e ->
-                error = e.message ?: "Failed to load purchase"
+                error = e.message ?: texts.failedToLoadPurchase
                 isLoading = false
             }
     }
@@ -74,13 +92,21 @@ fun PurchaseDetailScreen(
     ) {
         when {
             isLoading -> {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator()
                 }
             }
 
             error != null -> {
-                Text("Error: $error", color = Color.Red)
+                Text(
+                    text = "${texts.errorLabel}: $error",
+                    color = Color.Red
+                )
                 Spacer(Modifier.weight(1f))
             }
 
@@ -107,7 +133,7 @@ fun PurchaseDetailScreen(
                 Spacer(Modifier.height(18.dp))
 
                 Text(
-                    "Purchase information",
+                    text = texts.purchaseInformation,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = textDark,
@@ -116,28 +142,62 @@ fun PurchaseDetailScreen(
 
                 Spacer(Modifier.height(22.dp))
 
-                Text("Location:", color = textDark, fontSize = 14.sp)
-                Text("Almaty, Kazakhstan", color = textDark, fontSize = 18.sp)
+                Text(
+                    text = texts.locationLabel,
+                    color = textDark,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = texts.locationValue,
+                    color = textDark,
+                    fontSize = 18.sp
+                )
 
                 Spacer(Modifier.height(14.dp))
 
-                Text("Purchaser:", color = textDark, fontSize = 14.sp)
-                Text(FirebaseAuth.getInstance().currentUser?.email ?: "Unknown", color = textDark, fontSize = 18.sp)
+                Text(
+                    text = texts.purchaserLabel,
+                    color = textDark,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = FirebaseAuth.getInstance().currentUser?.email ?: texts.unknown,
+                    color = textDark,
+                    fontSize = 18.sp
+                )
 
                 Spacer(Modifier.height(14.dp))
 
-                Text("Date and time:", color = textDark, fontSize = 14.sp)
-                Text(purchaseTime, color = textDark, fontSize = 18.sp)
+                Text(
+                    text = texts.dateTimeLabel,
+                    color = textDark,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = purchaseTime,
+                    color = textDark,
+                    fontSize = 18.sp
+                )
 
                 Spacer(Modifier.height(20.dp))
 
-                Text("Your purchase:", color = textDark, fontSize = 16.sp)
+                Text(
+                    text = texts.yourPurchase,
+                    color = textDark,
+                    fontSize = 16.sp
+                )
+
                 Spacer(Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("🟢", fontSize = 14.sp)
                     Spacer(Modifier.width(6.dp))
-                    Text("Paid", color = green, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(
+                        text = texts.paid,
+                        color = green,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
                 }
 
                 Spacer(Modifier.height(14.dp))
@@ -147,7 +207,11 @@ fun PurchaseDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     items.forEach { item ->
-                        PurchaseDetailRow(item = item, textDark = textDark)
+                        PurchaseDetailRow(
+                            item = item,
+                            textDark = textDark,
+                            currency = texts.tenge
+                        )
                     }
                 }
 
@@ -158,8 +222,18 @@ fun PurchaseDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Amount", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
-                    Text("${totalAmount.toInt()} ₸", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
+                    Text(
+                        text = texts.amount,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = textDark
+                    )
+                    Text(
+                        text = "${totalAmount.toInt()} ${texts.tenge}",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = textDark
+                    )
                 }
 
                 Spacer(Modifier.height(18.dp))
@@ -178,7 +252,8 @@ fun PurchaseDetailScreen(
 @Composable
 private fun PurchaseDetailRow(
     item: Map<String, Any>,
-    textDark: Color
+    textDark: Color,
+    currency: String
 ) {
     val imageUrl = item["imageUrl"] as? String ?: ""
     val emoji = item["imageEmoji"] as? String ?: "🛍️"
@@ -216,13 +291,31 @@ private fun PurchaseDetailRow(
         Spacer(Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = textDark)
-            Text("${price.toInt()} ₸", fontSize = 14.sp, color = textDark)
+            Text(
+                text = name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = textDark
+            )
+            Text(
+                text = "${price.toInt()} $currency",
+                fontSize = 14.sp,
+                color = textDark
+            )
         }
 
         Column(horizontalAlignment = Alignment.End) {
-            Text("${rowTotal.toInt()} ₸", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = textDark)
-            Text("x $quantity", fontSize = 14.sp, color = textDark)
+            Text(
+                text = "${rowTotal.toInt()} $currency",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                color = textDark
+            )
+            Text(
+                text = "x $quantity",
+                fontSize = 14.sp,
+                color = textDark
+            )
         }
     }
 }

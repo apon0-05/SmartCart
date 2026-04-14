@@ -2,4 +2,70 @@
     <string name="app_name">SmartCard</string>
     <string name="default_web_client_id">642371715222-kdj3gu1l7k2husvf021iv1uj3chjm9ut.apps.googleusercontent.com</string>
 
+    <!-- Login -->
+    <string name="email">Email</string>
+    <string name="email_placeholder">name@email.com</string>
+    <string name="password">Password</string>
+    <string name="password_hint">At least 8 characters</string>
+    <string name="login">Log in</string>
+    <string name="cant_login">Can’t log in?</string>
+    <string name="loading">Loading...</string>
+    <string name="info">Info</string>
+    <string name="ok">OK</string>
+    <string name="login_with_google">Log in with Google</string>
+    <string name="dont_have_account">Don’t have an account?</string>
+    <string name="sign_up">Sign up</string>
+
+    <!-- Sign Up -->
+    <string name="sign_up_title">Sign Up</string>
+    <string name="sign_up_subtitle">Please enter your details</string>
+    <string name="full_name">Full name</string>
+    <string name="enter_full_name">Enter your full name</string>
+    <string name="enter_email">Enter your email</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="agree_with">I agree with</string>
+    <string name="terms">Terms</string>
+    <string name="and">and</string>
+    <string name="privacy">Privacy</string>
+    <string name="already_have_account">Already have an account?</string>
+
+    <!-- Validation -->
+    <string name="error_enter_full_name">Please enter your full name</string>
+    <string name="error_enter_email">Please enter your email</string>
+    <string name="error_password_length">Password must be at least 8 characters</string>
+    <string name="error_passwords_not_match">Passwords do not match</string>
+    <string name="error_agree_terms">Please agree with Terms and Privacy</string>
+
+    <!-- Home -->
+    <string name="good_afternoon">Good Afternoon 👋🏻</string>
+    <string name="welcome_to">WELCOME TO</string>
+    <string name="smart">smart</string>
+    <string name="shopping">shopping</string>
+    <string name="cart">cart</string>
+    <string name="scan_product">Scan a product</string>
+    <string name="scanner_count">384 Scanner</string>
+    <string name="receipt_tax_invoice">Receipt / tax invoice</string>
+    <string name="detected_count">23 detected</string>
+    <string name="products_purchased">Products purchased</string>
+
+
+    <string name="language">Language</string>
+    <string name="kazakh">Қазақша</string>
+    <string name="russian">Русский</string>
+    <string name="english">English</string>
+
+    <string name="personal_data">Personal Data</string>
+    <string name="notifications">Notifications</string>
+    <string name="my_purchases">My purchases</string>
+    <string name="my_cards">My cards</string>
+    <string name="exit">Exit</string>
+    <string name="user">User</string>
+    <string name="no_email">No email</string>
+    <string name="choose_app_language">Choose app language</string>
+
+    <!-- Purchases -->
+    <plurals name="purchase_count">
+        <item quantity="one">%d purchase</item>
+        <item quantity="other">%d purchases</item>
+    </plurals>
 </resources>

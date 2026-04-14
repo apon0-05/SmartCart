@@ -48,7 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.smartcard.data.remote.Product
+import com.example.smartcard.localization.LocalAppStrings
 import com.example.smartcard.ml.MlRepository
+import com.example.smartcard.utils.LanguageManager
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -74,9 +76,10 @@ fun CameraScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val db = remember { FirebaseFirestore.getInstance() }
+    val texts = LocalAppStrings.current
 
     var productName by remember { mutableStateOf<String?>(null) }
-    var statusMessage by remember { mutableStateOf("Наведите камеру на товар") }
+    var statusMessage by remember { mutableStateOf(texts.cameraPointToProduct) }
     var barcodeFallbackMode by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
     var productAdded by remember { mutableStateOf(false) }
@@ -112,13 +115,13 @@ fun CameraScreen(
         verticalArrangement = Arrangement.Top
     ) {
         TextButton(onClick = onBack) {
-            Text("Back", color = Color.White)
+            Text(texts.back, color = Color.White)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         if (!hasPermission) {
-            Text("Camera permission required", color = Color.White)
+            Text(texts.cameraPermissionRequired, color = Color.White)
             return@Column
         }
 
@@ -228,7 +231,7 @@ fun CameraScreen(
 
                 productName?.let {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Product: $it", color = Color.Black)
+                    Text(text = "${texts.productLabel}: $it", color = Color.Black)
                 }
 
                 if (isProcessing) {
@@ -263,7 +266,13 @@ private fun handleMlModeWithLogs(
 
     onLastMlRequestTimeChanged(now)
     onProcessingChanged(true)
-    onStatusChanged("Распознаем товар...")
+    onStatusChanged(
+        when (LanguageManager.getLanguage()) {
+            "ru" -> "Распознаем товар..."
+            "kk" -> "Өнімді анықтап жатырмыз..."
+            else -> "Recognizing product..."
+        }
+    )
     Log.d(TAG, "ML mode started")
 
     val file = try {
@@ -271,7 +280,13 @@ private fun handleMlModeWithLogs(
     } catch (e: Exception) {
         Log.e(TAG, "imageProxyToJpegFile failed", e)
         onProcessingChanged(false)
-        onStatusChanged("Ошибка подготовки кадра")
+        onStatusChanged(
+            when (LanguageManager.getLanguage()) {
+                "ru" -> "Ошибка подготовки кадра"
+                "kk" -> "Кадрды дайындау қатесі"
+                else -> "Frame preparation error"
+            }
+        )
         imageProxy.close()
         return
     }
@@ -296,8 +311,14 @@ private fun handleMlModeWithLogs(
 
             Log.d(TAG, "yoloClassRaw=$yoloClassRaw, yoloClass=$yoloClass, yoloConfidence=$yoloConfidence")
 
-            if (yoloClass != null && yoloConfidence >= 0.65) {
-                onStatusChanged("Найдено: $yoloClass")
+            if (yoloClass != null && yoloConfidence >= 0.35) {
+                onStatusChanged(
+                    when (LanguageManager.getLanguage()) {
+                        "ru" -> "Найдено: $yoloClass"
+                        "kk" -> "Табылды: $yoloClass"
+                        else -> "Found: $yoloClass"
+                    }
+                )
                 Log.d(TAG, "YOLO confident enough, searching Firestore by ml_label")
 
                 val result = db.collection("products")
@@ -324,7 +345,13 @@ private fun handleMlModeWithLogs(
                         onSuccess = {
                             Log.d(TAG, "Product added to cart successfully")
                             onProductNameChanged(product.name)
-                            onStatusChanged("Товар распознан и добавлен")
+                            onStatusChanged(
+                                when (LanguageManager.getLanguage()) {
+                                    "ru" -> "Товар распознан и добавлен"
+                                    "kk" -> "Өнім танылып, қосылды"
+                                    else -> "Product recognized and added"
+                                }
+                            )
                             onProductAdded()
                             onProcessingChanged(false)
                             onGoCart()
@@ -338,19 +365,37 @@ private fun handleMlModeWithLogs(
                     )
                 } else {
                     Log.d(TAG, "No product found by ml_label=$yoloClass")
-                    onStatusChanged("Товар не найден в базе. Сканируйте штрихкод")
+                    onStatusChanged(
+                        when (LanguageManager.getLanguage()) {
+                            "ru" -> "Товар не найден в базе. Сканируйте штрихкод"
+                            "kk" -> "Өнім базада табылмады. Штрихкодты сканерлеңіз"
+                            else -> "Product not found in database. Scan barcode"
+                        }
+                    )
                     onProcessingChanged(false)
                     onEnableBarcodeFallback()
                 }
             } else {
                 Log.d(TAG, "YOLO confidence too low or yoloClass null")
-                onStatusChanged("Товар не распознан. Сканируйте штрихкод")
+                onStatusChanged(
+                    when (LanguageManager.getLanguage()) {
+                        "ru" -> "Товар не распознан. Сканируйте штрихкод"
+                        "kk" -> "Өнім танылмады. Штрихкодты сканерлеңіз"
+                        else -> "Product not recognized. Scan barcode"
+                    }
+                )
                 onProcessingChanged(false)
                 onEnableBarcodeFallback()
             }
         } catch (e: Exception) {
             Log.e(TAG, "ML mode exception", e)
-            onStatusChanged("Ошибка ML: ${e.message}")
+            onStatusChanged(
+                when (LanguageManager.getLanguage()) {
+                    "ru" -> "Ошибка ML: ${e.message}"
+                    "kk" -> "ML қатесі: ${e.message}"
+                    else -> "ML error: ${e.message}"
+                }
+            )
             onProcessingChanged(false)
             onEnableBarcodeFallback()
         } finally {
@@ -395,7 +440,13 @@ private fun handleBarcodeModeWithLogs(
 
             if (value != null) {
                 onProcessingChanged(true)
-                onStatusChanged("Штрихкод найден, ищем товар...")
+                onStatusChanged(
+                    when (LanguageManager.getLanguage()) {
+                        "ru" -> "Штрихкод найден, ищем товар..."
+                        "kk" -> "Штрихкод табылды, өнімді іздеп жатырмыз..."
+                        else -> "Barcode found, searching product..."
+                    }
+                )
 
                 scope.launch {
                     try {
@@ -423,7 +474,13 @@ private fun handleBarcodeModeWithLogs(
                                 onSuccess = {
                                     Log.d(TAG, "Product added by barcode")
                                     onProductNameChanged(product.name)
-                                    onStatusChanged("Товар добавлен по штрихкоду")
+                                    onStatusChanged(
+                                        when (LanguageManager.getLanguage()) {
+                                            "ru" -> "Товар добавлен по штрихкоду"
+                                            "kk" -> "Өнім штрихкод арқылы қосылды"
+                                            else -> "Product added by barcode"
+                                        }
+                                    )
                                     onProductAdded()
                                     onProcessingChanged(false)
                                     onGoCart()
@@ -436,12 +493,24 @@ private fun handleBarcodeModeWithLogs(
                             )
                         } else {
                             Log.d(TAG, "No product found by barcode")
-                            onStatusChanged("Товар по штрихкоду не найден")
+                            onStatusChanged(
+                                when (LanguageManager.getLanguage()) {
+                                    "ru" -> "Товар по штрихкоду не найден"
+                                    "kk" -> "Штрихкод бойынша өнім табылмады"
+                                    else -> "Product not found by barcode"
+                                }
+                            )
                             onProcessingChanged(false)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Firestore barcode query failed", e)
-                        onStatusChanged("Ошибка базы: ${e.message}")
+                        onStatusChanged(
+                            when (LanguageManager.getLanguage()) {
+                                "ru" -> "Ошибка базы: ${e.message}"
+                                "kk" -> "База қатесі: ${e.message}"
+                                else -> "Database error: ${e.message}"
+                            }
+                        )
                         onProcessingChanged(false)
                     }
                 }
@@ -449,7 +518,13 @@ private fun handleBarcodeModeWithLogs(
         }
         .addOnFailureListener { e ->
             Log.e(TAG, "Barcode scanner failed", e)
-            onStatusChanged("Ошибка сканирования штрихкода")
+            onStatusChanged(
+                when (LanguageManager.getLanguage()) {
+                    "ru" -> "Ошибка сканирования штрихкода"
+                    "kk" -> "Штрихкодты сканерлеу қатесі"
+                    else -> "Barcode scanning error"
+                }
+            )
         }
         .addOnCompleteListener {
             imageProxy.close()
@@ -502,7 +577,13 @@ private fun addProductToCartWithLogs(
         }
     } catch (e: Exception) {
         Log.e(TAG, "addProductToCart crashed", e)
-        onError("Ошибка корзины: ${e.message}")
+        onError(
+            when (LanguageManager.getLanguage()) {
+                "ru" -> "Ошибка корзины: ${e.message}"
+                "kk" -> "Себет қатесі: ${e.message}"
+                else -> "Cart error: ${e.message}"
+            }
+        )
     }
 }
 
@@ -547,32 +628,18 @@ private fun normalizeYoloLabel(label: String?): String? {
     if (label == null) return null
 
     return when (label.lowercase()) {
-
-        // 🍎 Фрукты
         "apple" -> "apple"
         "banana" -> "banana"
         "orange" -> "orange"
-
-        // 🥤 Coca-Cola
         "coca-cola_can" -> "coca-cola can"
         "coca-cola_box" -> "coca-cola carton"
         "coca-cola_bottle" -> "coca-cola bottle"
-
-        // 🥤 Fanta
         "fanta_box" -> "fanta carton"
         "fanta_bottle" -> "fanta bottle"
-
-        // 🥤 Fuse Tea
         "fusetea_box" -> "fuse tea carton"
         "fusetea_bottle" -> "fuse tea bottle"
-
-        // 🥤 Sprite
         "sprite_box" -> "sprite carton"
         "sprite_bottle" -> "sprite bottle"
-
-        else -> {
-            // fallback если вдруг новый класс появится
-            label.replace("_", " ")
-        }
+        else -> label.replace("_", " ")
     }
 }

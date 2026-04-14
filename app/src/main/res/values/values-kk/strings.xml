@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">SmartCard</string>
+    <string name="default_web_client_id">642371715222-kdj3gu1l7k2husvf021iv1uj3chjm9ut.apps.googleusercontent.com</string>
+
+    <string name="email">Электрондық пошта</string>
+    <string name="email_placeholder">name@email.com</string>
+    <string name="password">Құпиясөз</string>
+    <string name="password_hint">Кемінде 8 таңба</string>
+    <string name="login">Кіру</string>
+    <string name="cant_login">Кіру мүмкін емес пе?</string>
+    <string name="loading">Жүктелуде...</string>
+    <string name="info">Ақпарат</string>
+    <string name="ok">ОК</string>
+    <string name="login_with_google">Google арқылы кіру</string>
+    <string name="dont_have_account">Тіркелгіңіз жоқ па?</string>
+    <string name="sign_up">Тіркелу</string>
+
+    <string name="sign_up_title">Тіркелу</string>
+    <string name="sign_up_subtitle">Деректеріңізді енгізіңіз</string>
+    <string name="full_name">Толық аты-жөні</string>
+    <string name="enter_full_name">Толық аты-жөніңізді енгізіңіз</string>
+    <string name="enter_email">Email енгізіңіз</string>
+    <string name="confirm_password">Құпиясөзді растаңыз</string>
+    <string name="agree_with">Мен</string>
+    <string name="terms">Шарттармен</string>
+    <string name="and">және</string>
+    <string name="privacy">Құпиялылық саясатымен</string>
+    <string name="already_have_account">Аккаунтыңыз бар ма?</string>
+
+    <string name="error_enter_full_name">Толық аты-жөніңізді енгізіңіз</string>
+    <string name="error_enter_email">Email енгізіңіз</string>
+    <string name="error_password_length">Құпиясөз кемінде 8 таңбадан тұруы керек</string>
+    <string name="error_passwords_not_match">Құпиясөздер сәйкес емес</string>
+    <string name="error_agree_terms">Шарттармен және құпиялылық саясатымен келісіңіз</string>
+
+    <string name="good_afternoon">Қайырлы күн 👋🏻</string>
+    <string name="welcome_to">ҚОШ КЕЛДІҢІЗ</string>
+    <string name="smart">ақылды</string>
+    <string name="shopping">сатып алу</string>
+    <string name="cart">арбасына</string>
+    <string name="scan_product">Өнімді сканерлеу</string>
+    <string name="scanner_count">384 сканерлеу</string>
+    <string name="receipt_tax_invoice">Чек / салық шоты</string>
+    <string name="detected_count">23 анықталды</string>
+    <string name="products_purchased">Сатып алынған тауарлар</string>
+
+
+    <string name="language">Тіл</string>
+    <string name="kazakh">Қазақша</string>
+    <string name="russian">Русский</string>
+    <string name="english">English</string>
+
+    <string name="personal_data">Жеке деректер</string>
+    <string name="notifications">Хабарламалар</string>
+    <string name="my_purchases">Сатып алуларым</string>
+    <string name="my_cards">Карталарым</string>
+    <string name="exit">Шығу</string>
+    <string name="user">Пайдаланушы</string>
+    <string name="no_email">Email жоқ</string>
+    <string name="choose_app_language">Қосымша тілін таңдаңыз</string>
+
+    <plurals name="purchase_count">
+        <item quantity="one">%d сатып алу</item>
+        <item quantity="other">%d сатып алу</item>
+    </plurals>
+</resources>

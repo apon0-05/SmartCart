@@ -2,27 +2,40 @@ package com.example.smartcard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
+import com.example.smartcard.localization.LocalAppStrings
 
 @Composable
 fun CartScreen(
@@ -33,6 +46,8 @@ fun CartScreen(
     onBottomCart: () -> Unit,
     onBottomHistory: () -> Unit
 ) {
+    val texts = LocalAppStrings.current
+
     val bg = Color(0xFFF6F6F6)
     val cardBg = Color(0xFFF4F4F4)
     val textDark = Color(0xFF2F2F2F)
@@ -69,7 +84,6 @@ fun CartScreen(
             .background(bg)
             .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
-        // Top bar
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
@@ -85,7 +99,7 @@ fun CartScreen(
             Spacer(Modifier.width(12.dp))
 
             Text(
-                text = "Shopping Cart 🛒",
+                text = texts.shoppingCartTitle,
                 color = textDark,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 22.sp
@@ -94,42 +108,58 @@ fun CartScreen(
 
         Spacer(Modifier.height(18.dp))
 
-        // Items
         CartSession.items.forEach { item ->
             CartRow(
                 item = item,
                 onInc = {
                     if (!cartId.isNullOrBlank()) {
-                        RemoteCartRepository.increaseQty(cartId, CartSession.items.toList(), item.barcode)
+                        RemoteCartRepository.increaseQty(
+                            cartId,
+                            CartSession.items.toList(),
+                            item.barcode
+                        )
                     }
                 },
                 onDec = {
                     if (!cartId.isNullOrBlank()) {
-                        RemoteCartRepository.decreaseQty(cartId, CartSession.items.toList(), item.barcode)
+                        RemoteCartRepository.decreaseQty(
+                            cartId,
+                            CartSession.items.toList(),
+                            item.barcode
+                        )
                     }
                 },
                 onRemove = {
                     if (!cartId.isNullOrBlank()) {
-                        RemoteCartRepository.removeItem(cartId, CartSession.items.toList(), item.barcode)
+                        RemoteCartRepository.removeItem(
+                            cartId,
+                            CartSession.items.toList(),
+                            item.barcode
+                        )
                     }
                 },
                 cardBg = cardBg,
-                accent = accent
+                accent = accent,
+                currency = texts.currency
             )
             Spacer(Modifier.height(12.dp))
         }
 
         Spacer(Modifier.height(10.dp))
 
-        // Total
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Total", color = textDark, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Text(
-                "${CartSession.total()} TG",
+                text = texts.total,
+                color = textDark,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+            Text(
+                text = "${CartSession.total()} ${texts.currency}",
                 color = accent,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp
@@ -137,6 +167,7 @@ fun CartScreen(
         }
 
         Spacer(Modifier.height(16.dp))
+
         if (error != null) {
             Text(
                 text = error!!,
@@ -144,7 +175,7 @@ fun CartScreen(
                 modifier = Modifier.padding(bottom = 10.dp)
             )
         }
-        // Payment button
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -165,7 +196,8 @@ fun CartScreen(
                             ReceiptSession.lastReceiptId = receiptId
 
                             if (!cartId.isNullOrBlank()) {
-                                RemoteCartRepository.clearCart(cartId,
+                                RemoteCartRepository.clearCart(
+                                    cartId,
                                     onSuccess = {
                                         CartConnectionRepository.disconnectCart(
                                             cartId = cartId,
@@ -194,7 +226,7 @@ fun CartScreen(
                             }
                         },
                         onError = { message ->
-                            error = "Payment failed: $message"
+                            error = "${texts.paymentFailed}: $message"
                             isPaying = false
                         }
                     )
@@ -202,7 +234,7 @@ fun CartScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                "Go To Payment",
+                text = texts.goToPayment,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
@@ -211,7 +243,6 @@ fun CartScreen(
 
         Spacer(Modifier.weight(1f))
 
-        // Bottom nav (как в HomeScreen)
         BottomNavBar(
             onHome = onBottomHome,
             onBag = onBottomBag,
@@ -228,7 +259,8 @@ private fun CartRow(
     onDec: () -> Unit,
     onRemove: () -> Unit,
     cardBg: Color,
-    accent: Color
+    accent: Color,
+    currency: String
 ) {
     val textDark = Color(0xFF2F2F2F)
     val hint = Color(0xFF8A8A8A)
@@ -241,7 +273,6 @@ private fun CartRow(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // image placeholder
         Box(
             modifier = Modifier
                 .size(58.dp)
@@ -267,13 +298,26 @@ private fun CartRow(
         Spacer(Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(item.brand ?: " ", color = hint, fontSize = 12.sp)
-            Text(item.name, color = textDark, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(
+                text = item.brand ?: " ",
+                color = hint,
+                fontSize = 12.sp
+            )
+            Text(
+                text = item.name,
+                color = textDark,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
             Spacer(Modifier.height(4.dp))
-            Text("${item.price} TG", color = accent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(
+                text = "${item.price} $currency",
+                color = accent,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
         }
 
-        // qty control
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(14.dp))
@@ -299,6 +343,7 @@ fun ReceiptScreen(
     receiptId: String,
     onBack: () -> Unit
 ) {
+    val texts = LocalAppStrings.current
     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
     val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
 
@@ -310,7 +355,7 @@ fun ReceiptScreen(
         val user = auth.currentUser
 
         if (user == null) {
-            error = "User not logged in"
+            error = texts.userNotLoggedIn
             isLoading = false
             return@LaunchedEffect
         }
@@ -324,12 +369,12 @@ fun ReceiptScreen(
                 if (document.exists()) {
                     receiptData = document.data
                 } else {
-                    error = "Receipt not found"
+                    error = texts.receiptNotFound
                 }
                 isLoading = false
             }
             .addOnFailureListener { e ->
-                error = e.message ?: "Failed to load receipt"
+                error = e.message ?: texts.failedToLoadReceipt
                 isLoading = false
             }
     }
@@ -352,10 +397,15 @@ fun ReceiptScreen(
             ) {
                 Column {
                     TextButton(onClick = onBack) {
-                        Text("Back")
+                        Text(texts.back)
                     }
+
                     Spacer(Modifier.height(16.dp))
-                    Text("Error: $error", color = Color.Red)
+
+                    Text(
+                        text = "${texts.errorLabel}: $error",
+                        color = Color.Red
+                    )
                 }
             }
         }
@@ -398,18 +448,27 @@ fun ReceiptScreen(
                         .padding(24.dp)
                 ) {
                     Text(
-                        "MAGNUM SHOPPING CENTER",
+                        text = texts.shopName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
+
                     Spacer(Modifier.height(6.dp))
-                    Text("Receipt ID: $receiptIdValue", fontSize = 14.sp)
-                    Text("Time: $purchaseTime", fontSize = 14.sp)
+
+                    Text(
+                        text = "${texts.receiptIdLabel}: $receiptIdValue",
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = "${texts.timeLabel}: $purchaseTime",
+                        fontSize = 14.sp
+                    )
 
                     Spacer(Modifier.height(24.dp))
 
                     Text(
-                        "RECEIPT / TAX INVOICE",
+                        text = texts.receiptTaxInvoice,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 26.sp
                     )
@@ -418,17 +477,18 @@ fun ReceiptScreen(
 
                     items.forEach { item ->
                         val name = item["name"] as? String ?: ""
-                        val quantity  = (item["quantity"] as? Number)?.toInt() ?: 0
+                        val quantity = (item["quantity"] as? Number)?.toInt() ?: 0
                         val price = (item["price"] as? Number)?.toDouble() ?: 0.0
-                        val rowTotal = quantity  * price
+                        val rowTotal = quantity * price
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("$quantity    $name", fontSize = 16.sp)
-                            Text("${rowTotal.toInt()} TG", fontSize = 16.sp)
+                            Text("${rowTotal.toInt()} ${texts.currency}", fontSize = 16.sp)
                         }
+
                         Spacer(Modifier.height(10.dp))
                     }
 
@@ -440,19 +500,27 @@ fun ReceiptScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Total  $totalItems items", fontWeight = FontWeight.Medium)
-                        Text("${totalAmount.toInt()} TG", fontWeight = FontWeight.Medium)
+                        Text(
+                            text = "${texts.total}  $totalItems ${texts.itemsLabel}",
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "${totalAmount.toInt()} ${texts.currency}",
+                            fontWeight = FontWeight.Medium
+                        )
                     }
 
                     Spacer(Modifier.height(40.dp))
 
                     Text(
-                        "MAGNUM SHOPPING CENTER",
+                        text = texts.shopName,
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
+
                     Spacer(Modifier.height(8.dp))
+
                     Text(
-                        purchaseTime,
+                        text = purchaseTime,
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
@@ -460,4 +528,3 @@ fun ReceiptScreen(
         }
     }
 }
-

@@ -3,7 +3,18 @@ package com.example.smartcard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,13 +28,18 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,9 +48,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartcard.localization.LocalAppStrings
 import com.example.smartcard.viewmodel.AuthViewModel
 
 @Composable
@@ -43,6 +61,7 @@ fun SignUpScreen(
     onBackToLogin: () -> Unit
 ) {
     val vm: AuthViewModel = viewModel()
+    val texts = LocalAppStrings.current
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -77,10 +96,10 @@ fun SignUpScreen(
                         vm.clearMessage()
                     }
                 ) {
-                    Text("OK")
+                    Text(texts.ok)
                 }
             },
-            title = { Text("Info") },
+            title = { Text(texts.info) },
             text = { Text(dialogMessage) }
         )
     }
@@ -125,12 +144,10 @@ fun SignUpScreen(
                             .align(Alignment.TopStart)
                             .padding(start = 20.dp, top = 18.dp)
                     ) {
-
-
                         Spacer(modifier = Modifier.height(35.dp))
 
                         Text(
-                            text = "Sign Up",
+                            text = texts.signUp,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = titleColor
@@ -139,7 +156,7 @@ fun SignUpScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Please enter your details",
+                            text = texts.chooseLanguage,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium,
                             color = titleColor
@@ -155,7 +172,7 @@ fun SignUpScreen(
                             .background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
-                        androidx.compose.material3.Icon(
+                        Icon(
                             imageVector = Icons.Outlined.ShoppingCart,
                             contentDescription = null,
                             tint = titleColor,
@@ -169,8 +186,8 @@ fun SignUpScreen(
                 CustomField(
                     value = fullName,
                     onValueChange = { fullName = it },
-                    label = "Full name",
-                    placeholder = "Enter your full name",
+                    label = texts.user,
+                    placeholder = texts.user,
                     borderColor = borderColor,
                     labelColor = labelColor
                 )
@@ -180,11 +197,11 @@ fun SignUpScreen(
                 CustomField(
                     value = email,
                     onValueChange = { email = it },
-                    label = "Email",
-                    placeholder = "Enter your email",
-                    keyboardType = KeyboardType.Email,
+                    label = texts.email,
+                    placeholder = texts.emailPlaceholder,
                     borderColor = borderColor,
-                    labelColor = labelColor
+                    labelColor = labelColor,
+                    keyboardType = KeyboardType.Email
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -192,11 +209,11 @@ fun SignUpScreen(
                 CustomField(
                     value = password,
                     onValueChange = { password = it },
-                    label = "Password",
-                    placeholder = "At least 8 characters",
-                    isPassword = true,
+                    label = texts.password,
+                    placeholder = texts.passwordHint,
                     borderColor = borderColor,
-                    labelColor = labelColor
+                    labelColor = labelColor,
+                    isPassword = true
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -204,11 +221,11 @@ fun SignUpScreen(
                 CustomField(
                     value = confirm,
                     onValueChange = { confirm = it },
-                    label = "Confirm password",
-                    placeholder = "At least 8 characters",
-                    isPassword = true,
+                    label = texts.password,
+                    placeholder = texts.passwordHint,
                     borderColor = borderColor,
-                    labelColor = labelColor
+                    labelColor = labelColor,
+                    isPassword = true
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -242,29 +259,9 @@ fun SignUpScreen(
                     )
 
                     Text(
-                        text = "I agree with ",
+                        text = texts.dontHaveAccount,
                         color = textGray,
                         fontSize = 16.sp
-                    )
-
-                    Text(
-                        text = "Terms",
-                        color = blueLink,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Text(
-                        text = " and ",
-                        color = textGray,
-                        fontSize = 16.sp
-                    )
-
-                    Text(
-                        text = "Privacy",
-                        color = blueLink,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
@@ -274,19 +271,19 @@ fun SignUpScreen(
                     onClick = {
                         when {
                             fullName.isBlank() -> {
-                                localError = "Please enter your full name"
+                                localError = texts.user
                             }
                             email.isBlank() -> {
-                                localError = "Please enter your email"
+                                localError = texts.email
                             }
                             password.length < 8 -> {
-                                localError = "Password must be at least 8 characters"
+                                localError = texts.passwordHint
                             }
                             confirm != password -> {
-                                localError = "Passwords do not match"
+                                localError = texts.info
                             }
                             !agreeTerms -> {
-                                localError = "Please agree with Terms and Privacy"
+                                localError = texts.chooseLanguage
                             }
                             else -> {
                                 vm.signUp(email, password) {
@@ -318,7 +315,7 @@ fun SignUpScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (loading) "Loading..." else "Sign up",
+                            text = if (loading) texts.loading else texts.signUp,
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Medium
@@ -329,7 +326,7 @@ fun SignUpScreen(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
-                    text = "Already have an account?",
+                    text = texts.dontHaveAccount,
                     color = textGray,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
@@ -347,7 +344,7 @@ fun SignUpScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Log in",
+                        text = texts.login,
                         color = peachDark,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Medium
@@ -364,10 +361,10 @@ private fun CustomField(
     onValueChange: (String) -> Unit,
     label: String,
     placeholder: String,
-    isPassword: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text,
     borderColor: Color,
-    labelColor: Color
+    labelColor: Color,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    isPassword: Boolean = false
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -393,7 +390,7 @@ private fun CustomField(
             visualTransformation = if (isPassword) {
                 PasswordVisualTransformation()
             } else {
-                androidx.compose.ui.text.input.VisualTransformation.None
+                VisualTransformation.None
             },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(12.dp),

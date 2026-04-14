@@ -2,10 +2,20 @@ package com.example.smartcard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,12 +25,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartcard.localization.LocalAppStrings
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.example.smartcard.utils.LanguageManager
 
 @Composable
 fun HomeScreen(
@@ -34,16 +47,18 @@ fun HomeScreen(
     onBottomCart: () -> Unit,
     onBottomHistory: () -> Unit
 ) {
+    val texts = LocalAppStrings.current
+
     val bg = Color(0xFFF6F6F6)
-    val card = Color(0xFFF3E9E6)         // светло-розовый как в макете
+    val card = Color(0xFFF3E9E6)
     val textDark = Color(0xFF2F2F2F)
     val accent = Color(0xFFCF6B2D)
     val softBlue = Color(0xFFE8F0FF)
     val softOrange = Color(0xFFFFE9DF)
     val softMint = Color(0xFFE6F7F1)
 
-    val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
-    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
     var purchaseCount by remember { mutableStateOf(0) }
     var isLoadingPurchases by remember { mutableStateOf(true) }
@@ -70,11 +85,20 @@ fun HomeScreen(
         }
     }
 
-    val purchasesText = when (purchaseCount) {
-        1 -> "1 purchase"
-        else -> "$purchaseCount purchases"
-    }
+    val purchasesText = if (isLoadingPurchases) {
+        texts.loading
+    } else {
+        when (LanguageManager.getLanguage()) {
+            "ru" -> when {
+                purchaseCount % 10 == 1 && purchaseCount % 100 != 11 -> "$purchaseCount покупка"
+                purchaseCount % 10 in 2..4 && purchaseCount % 100 !in 12..14 -> "$purchaseCount покупки"
+                else -> "$purchaseCount покупок"
+            }
 
+            "kk" -> "$purchaseCount сатып алу"
+            else -> if (purchaseCount == 1) "$purchaseCount purchase" else "$purchaseCount purchases"
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -89,19 +113,15 @@ fun HomeScreen(
                 .background(Color.White)
                 .padding(18.dp)
         ) {
-
-            // ---- Header (time + greeting + avatar) ----
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-
-
                     Spacer(Modifier.height(14.dp))
 
                     Text(
-                        text = "Good Afternoon 👋🏻",
+                        text = texts.goodAfternoon,
                         color = textDark,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold
@@ -113,7 +133,6 @@ fun HomeScreen(
                     )
                 }
 
-                // Avatar (кликабельный)
                 Box(
                     modifier = Modifier
                         .size(44.dp)
@@ -128,28 +147,28 @@ fun HomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ---- Title ----
             Text(
-                text = "WELCOME TO",
+                text = texts.welcomeTo,
                 color = textDark,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold
             )
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "smart ",
+                    text = texts.smart + " ",
                     color = textDark,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "shopping",
+                    text = texts.shopping,
                     color = accent,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = " cart",
+                    text = " " + texts.cart,
                     color = textDark,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
@@ -158,7 +177,6 @@ fun HomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ---- Banner placeholder ----
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,7 +187,6 @@ fun HomeScreen(
 
             Spacer(Modifier.height(10.dp))
 
-            // dots
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
@@ -189,7 +206,6 @@ fun HomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ---- Two cards row ----
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -199,8 +215,8 @@ fun HomeScreen(
                     background = card,
                     iconBg = softBlue,
                     icon = "🧾",
-                    title = "Scan a product",
-                    subtitle = "384 Scanner",
+                    title = texts.scanProduct,
+                    subtitle = texts.scannerCount,
                     onClick = onScanProductClick
                 )
 
@@ -209,27 +225,25 @@ fun HomeScreen(
                     background = card,
                     iconBg = softOrange,
                     icon = "🧾",
-                    title = "receipt / tax invoice",
-                    subtitle = "23 detected",
+                    title = texts.receiptTaxInvoice,
+                    subtitle = texts.detectedCount,
                     onClick = onReceiptClick
                 )
             }
 
             Spacer(Modifier.height(14.dp))
 
-            // ---- Big card ----
             BigFeatureCard(
                 background = card,
                 iconBg = softMint,
                 icon = "✅",
-                title = "Products purchased",
-                subtitle = if (isLoadingPurchases) "Loading..." else purchasesText,
+                title = texts.productsPurchased,
+                subtitle = purchasesText,
                 onClick = onProductsPurchasedClick
             )
 
             Spacer(Modifier.weight(1f))
 
-            // ---- Bottom Navigation ----
             BottomNavBar(
                 onHome = onBottomHome,
                 onBag = onBottomBag,
@@ -282,11 +296,14 @@ private fun FeatureCard(
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center
         )
+
         Spacer(Modifier.height(6.dp))
+
         Text(
             text = subtitle,
             color = hint,
-            fontSize = 12.sp
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -332,11 +349,14 @@ private fun BigFeatureCard(
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold
         )
+
         Spacer(Modifier.height(6.dp))
+
         Text(
             text = subtitle,
             color = hint,
-            fontSize = 12.sp
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -377,6 +397,7 @@ private fun BottomIcon(
     onClick: () -> Unit
 ) {
     val bg = if (activeBg) Color(0xFFE1F0FF) else Color.Transparent
+
     Box(
         modifier = Modifier
             .size(44.dp)
@@ -385,6 +406,10 @@ private fun BottomIcon(
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Text(icon, fontSize = 18.sp, color = tint)
+        Text(
+            text = icon,
+            fontSize = 18.sp,
+            color = tint
+        )
     }
 }

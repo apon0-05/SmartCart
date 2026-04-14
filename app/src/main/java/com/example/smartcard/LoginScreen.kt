@@ -1,7 +1,5 @@
 package com.example.smartcard
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,7 +7,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,19 +23,19 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartcard.localization.LocalAppStrings
 import com.example.smartcard.viewmodel.AuthViewModel
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -39,6 +44,7 @@ fun LoginScreen(
     onSignUp: () -> Unit
 ) {
     val vm: AuthViewModel = viewModel()
+    val texts = LocalAppStrings.current
 
     var email by remember { mutableStateOf("apon@gmail.com") }
     var password by remember { mutableStateOf("") }
@@ -55,9 +61,6 @@ fun LoginScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
-
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -69,14 +72,15 @@ fun LoginScreen(
                 .clip(RoundedCornerShape(18.dp))
                 .background(Color(0xFFFAFAFA))
         ) {
-
             LoginHeaderWave(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp),
                 backgroundTop = orangeSoft,
                 backgroundBottom = Color(0xFFF5D7C7),
-                titleColor = textDark
+                titleColor = textDark,
+                title = texts.login,
+                subtitle = texts.cantLogin
             )
 
             Spacer(Modifier.height(22.dp))
@@ -86,24 +90,24 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 18.dp)
             ) {
-
                 LabeledOutlinedField(
-                    label = "Email",
+                    label = texts.email,
                     value = email,
                     onValueChange = { email = it },
-                    placeholder = "name@email.com",
+                    placeholder = texts.emailPlaceholder,
                     borderColor = fieldBorder,
                     hintColor = hintGray,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    isPassword = false
                 )
 
                 Spacer(Modifier.height(14.dp))
 
                 LabeledOutlinedField(
-                    label = "Password",
+                    label = texts.password,
                     value = password,
                     onValueChange = { password = it },
-                    placeholder = "At least 8 characters",
+                    placeholder = texts.passwordHint,
                     borderColor = fieldBorder,
                     hintColor = hintGray,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -112,39 +116,25 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(18.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    repeat(4) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(3.dp)
-                                .padding(horizontal = 8.dp)
-                                .clip(RoundedCornerShape(100.dp))
-                                .background(Color(0xFFD7D7D7))
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(18.dp))
-
                 if (msg != null) {
                     AlertDialog(
                         onDismissRequest = { vm.clearMessage() },
                         confirmButton = {
-                            TextButton(onClick = { vm.clearMessage() }) { Text("OK") }
+                            TextButton(onClick = { vm.clearMessage() }) {
+                                Text(texts.ok)
+                            }
                         },
-                        title = { Text("Info") },
+                        title = { Text(texts.info) },
                         text = { Text(msg!!) }
                     )
                 }
 
                 GradientPrimaryButton(
-                    text = if (loading) "Loading..." else "Log in",
+                    text = if (loading) texts.loading else texts.login,
                     enabled = !loading && email.isNotBlank() && password.length >= 8,
-                    gradient = Brush.horizontalGradient(listOf(Color(0xFFF1C2A6), orange)),
+                    gradient = Brush.horizontalGradient(
+                        listOf(Color(0xFFF1C2A6), orange)
+                    ),
                     onClick = {
                         vm.login(email, password) { onLoginSuccess() }
                     }
@@ -154,13 +144,12 @@ fun LoginScreen(
 
                 GoogleButtonLogin(
                     enabled = !loading,
+                    text = texts.loginWithGoogle,
                     onClick = {
                         scope.launch {
                             signInWithGoogle(
                                 context = context,
-                                onSuccess = {
-                                    onLoginSuccess()
-                                },
+                                onSuccess = { onLoginSuccess() },
                                 onError = { error ->
                                     println("Google sign-in error: $error")
                                 }
@@ -172,7 +161,7 @@ fun LoginScreen(
                 Spacer(Modifier.height(22.dp))
 
                 Text(
-                    text = "Don’t have an account?",
+                    text = texts.dontHaveAccount,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                     color = Color(0xFF8A8A8A),
@@ -193,7 +182,10 @@ fun LoginScreen(
                         contentColor = orange
                     )
                 ) {
-                    Text("Sign up", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = texts.signUp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Spacer(Modifier.height(18.dp))
@@ -207,7 +199,9 @@ private fun LoginHeaderWave(
     modifier: Modifier,
     backgroundTop: Color,
     backgroundBottom: Color,
-    titleColor: Color
+    titleColor: Color,
+    title: String,
+    subtitle: String
 ) {
     Box(modifier = modifier) {
         Box(
@@ -217,7 +211,11 @@ private fun LoginHeaderWave(
                     val w = size.width
                     val h = size.height
 
-                    drawRect(brush = Brush.verticalGradient(listOf(backgroundTop, backgroundBottom)))
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            listOf(backgroundTop, backgroundBottom)
+                        )
+                    )
 
                     drawRoundRect(
                         color = Color(0xFFFAFAFA),
@@ -233,8 +231,6 @@ private fun LoginHeaderWave(
                 .fillMaxSize()
                 .padding(start = 22.dp, top = 22.dp, end = 18.dp)
         ) {
-
-
             Spacer(Modifier.height(54.dp))
 
             Row(
@@ -243,14 +239,16 @@ private fun LoginHeaderWave(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Log in",
+                        text = title,
                         color = titleColor,
                         fontSize = 44.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
+
                     Spacer(Modifier.height(6.dp))
+
                     Text(
-                        text = "Can’t log in?",
+                        text = subtitle,
                         color = titleColor.copy(alpha = 0.85f),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold
@@ -279,8 +277,8 @@ private fun LabeledOutlinedField(
     placeholder: String,
     borderColor: Color,
     hintColor: Color,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    isPassword: Boolean = false
+    keyboardOptions: KeyboardOptions,
+    isPassword: Boolean
 ) {
     Column {
         Text(
@@ -298,9 +296,18 @@ private fun LabeledOutlinedField(
                 .fillMaxWidth()
                 .height(58.dp),
             singleLine = true,
-            placeholder = { Text(placeholder, color = hintColor) },
+            placeholder = {
+                Text(
+                    text = placeholder,
+                    color = hintColor
+                )
+            },
             keyboardOptions = keyboardOptions,
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+            visualTransformation = if (isPassword) {
+                PasswordVisualTransformation()
+            } else {
+                VisualTransformation.None
+            },
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = borderColor,
@@ -328,8 +335,13 @@ private fun GradientPrimaryButton(
             .height(56.dp)
             .clip(shape)
             .background(
-                if (enabled) gradient
-                else Brush.horizontalGradient(listOf(Color(0xFFE6E6E6), Color(0xFFD9D9D9)))
+                if (enabled) {
+                    gradient
+                } else {
+                    Brush.horizontalGradient(
+                        listOf(Color(0xFFE6E6E6), Color(0xFFD9D9D9))
+                    )
+                }
             )
             .clickable(enabled = enabled) { onClick() },
         contentAlignment = Alignment.Center
@@ -346,6 +358,7 @@ private fun GradientPrimaryButton(
 @Composable
 private fun GoogleButtonLogin(
     enabled: Boolean,
+    text: String,
     onClick: () -> Unit
 ) {
     OutlinedButton(
@@ -371,17 +384,6 @@ private fun GoogleButtonLogin(
                 .wrapContentSize(Alignment.Center)
         )
         Spacer(Modifier.width(10.dp))
-        Text("Log in with Google", fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFF6F6F6)
-@Composable
-private fun PreviewLogin() {
-    MaterialTheme(colorScheme = lightColorScheme()) {
-        LoginScreen(
-            onLoginSuccess = {},
-            onSignUp = {}
-        )
+        Text(text = text, fontWeight = FontWeight.SemiBold)
     }
 }

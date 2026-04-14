@@ -11,6 +11,7 @@ import com.example.smartcard.CartConnectedScreen
 import com.example.smartcard.CartScreen
 import com.example.smartcard.HomeScreen
 import com.example.smartcard.LoginScreen
+import com.example.smartcard.NotificationsScreen
 import com.example.smartcard.ProfileScreen
 import com.example.smartcard.PurchaseDetailScreen
 import com.example.smartcard.PurchaseHistoryScreen
@@ -171,7 +172,8 @@ fun AppNavGraph(
                 onBottomHome = { navController.navigate(Screen.Home.route) },
                 onBottomBag = {navController.navigate("scan_cart_qr") },
                 onBottomCart = { navController.navigate(Screen.Cart.route) },
-                onBottomHistory = { navController.navigate("history") }
+                onBottomHistory = { navController.navigate("history") },
+                onNotifications = { navController.navigate("notifications") },
             )
         }
 
@@ -193,6 +195,17 @@ fun AppNavGraph(
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
                 }
+            )
+        }
+
+
+        composable("notifications") {
+            NotificationsScreen(
+                onBack = { navController.popBackStack() },
+                onBottomHome = { navController.navigate(Screen.Home.route) },
+                onBottomBag = { navController.navigate("scan_cart_qr") },
+                onBottomCart = { navController.navigate(Screen.Cart.route) },
+                onBottomHistory = { navController.navigate("history") }
             )
         }
 

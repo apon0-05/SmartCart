@@ -108,6 +108,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit,
     onMyPurchases: () -> Unit,
+    onNotifications: () -> Unit,
     onBottomHome: () -> Unit,
     onBottomBag: () -> Unit,
     onBottomCart: () -> Unit,
@@ -201,7 +202,7 @@ fun ProfileScreen(
                 },
                 title = texts.notifications,
                 badge = "2",
-                onClick = { }
+                onClick = onNotifications
             )
 
             Spacer(modifier = Modifier.height(12.dp))

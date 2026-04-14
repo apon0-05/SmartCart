@@ -5,8 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,13 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.smartcard.data.remote.PurchaseHistoryItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+
 @Composable
 fun PurchaseHistoryScreen(
     onBack: () -> Unit,
@@ -36,11 +38,6 @@ fun PurchaseHistoryScreen(
     var purchases by remember { mutableStateOf<List<PurchaseHistoryItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-
-    val bg = Color(0xFFF6F6F6)
-    val textDark = Color(0xFF2F2F2F)
-    val hint = Color(0xFF7A7A7A)
-    val green = Color(0xFF39D10A)
 
     LaunchedEffect(Unit) {
         val user = auth.currentUser
@@ -77,62 +74,75 @@ fun PurchaseHistoryScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(bg)
+            .background(AppColors.Background)
             .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color.White)
-                    .clickable { onBack() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text("‹", fontSize = 22.sp, color = textDark)
-            }
-        }
-
-        Spacer(Modifier.height(18.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("History", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
-            Text("Order completed", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = textDark)
+            AppBackButton(onClick = onBack)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                "History",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = AppColors.TextDark
+            )
         }
 
         Spacer(Modifier.height(18.dp))
 
         when {
-            isLoading -> {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
+            isLoading -> AppLoadingState(modifier = Modifier.weight(1f))
 
             error != null -> {
-                Text(error!!, color = Color.Red)
+                AppErrorState(message = error!!)
                 Spacer(Modifier.weight(1f))
             }
 
             purchases.isEmpty() -> {
-                Text("No purchases yet", color = hint)
-                Spacer(Modifier.weight(1f))
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(AppRadius.Large)
+                            .background(AppColors.CardWarm),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = AppColors.Primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "No purchases yet",
+                        color = AppColors.TextDark,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Your purchase history will appear here",
+                        color = AppColors.TextHint,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             else -> {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(purchases) { purchase ->
                         PurchaseHistoryCard(
                             purchase = purchase,
-                            green = green,
-                            textDark = textDark,
-                            hint = hint,
                             onClick = { onOpenPurchase(purchase.receiptId) }
                         )
                     }
@@ -141,6 +151,7 @@ fun PurchaseHistoryScreen(
         }
 
         BottomNavBar(
+            currentTab = NavTab.HISTORY,
             onHome = onBottomHome,
             onBag = onBottomBag,
             onCart = onBottomCart,
@@ -152,61 +163,64 @@ fun PurchaseHistoryScreen(
 @Composable
 private fun PurchaseHistoryCard(
     purchase: PurchaseHistoryItem,
-    green: Color,
-    textDark: Color,
-    hint: Color,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White)
+            .clip(AppRadius.Large)
+            .background(AppColors.Surface)
             .clickable { onClick() }
             .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(green)
-                    .padding(horizontal = 20.dp, vertical = 2.dp)
+                    .clip(AppRadius.Small)
+                    .background(AppColors.SuccessBg)
+                    .padding(horizontal = 12.dp, vertical = 3.dp)
             ) {
-                Text("Paid", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Paid",
+                    color = AppColors.Success,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
 
-            Text(purchase.purchaseTime, color = textDark, fontSize = 14.sp)
-            Text("Almaty, Kazakhstan", color = hint, fontSize = 12.sp)
+            Text(
+                purchase.purchaseTime,
+                color = AppColors.TextDark,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 purchase.items.take(4).forEach { item ->
                     val imageUrl = item["imageUrl"] as? String ?: ""
                     val emoji = item["imageEmoji"] as? String ?: "🛍️"
-
                     Box(
                         modifier = Modifier
-                            .size(26.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFFF4F4F4)),
+                            .size(28.dp)
+                            .clip(AppRadius.Small)
+                            .background(AppColors.SurfaceAlt),
                         contentAlignment = Alignment.Center
                     ) {
                         if (imageUrl.isNotBlank()) {
                             AsyncImage(
                                 model = imageUrl,
-                                contentDescription = "purchase item image",
+                                contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
                         } else {
-                            Text(
-                                text = if (emoji.isNotBlank()) emoji else "🛍️",
-                                fontSize = 14.sp
-                            )
+                            Text(text = emoji.ifBlank { "🛍️" }, fontSize = 14.sp)
                         }
                     }
                 }
@@ -215,8 +229,8 @@ private fun PurchaseHistoryCard(
 
         Text(
             text = "${purchase.totalAmount.toInt()} ₸",
-            color = textDark,
-            fontSize = 20.sp,
+            color = AppColors.Primary,
+            fontSize = 18.sp,
             fontWeight = FontWeight.ExtraBold
         )
     }

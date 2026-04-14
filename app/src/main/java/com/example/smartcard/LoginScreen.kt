@@ -29,9 +29,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartcard.viewmodel.AuthViewModel
+import android.content.Context
 import androidx.compose.runtime.rememberCoroutineScope
+import com.example.smartcard.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
+
+suspend fun signInWithGoogle(
+    context: Context,
+    onSuccess: () -> Unit,
+    onError: (String) -> Unit
+) {
+    // TO DO: implement Google sign-in logic here
+}
 
 @Composable
 fun LoginScreen(
@@ -61,12 +70,12 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 18.dp, vertical = 14.dp)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(vertical = 14.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(18.dp))
                 .background(Color(0xFFFAFAFA))
         ) {
 
@@ -233,9 +242,7 @@ private fun LoginHeaderWave(
                 .fillMaxSize()
                 .padding(start = 22.dp, top = 22.dp, end = 18.dp)
         ) {
-
-
-            Spacer(Modifier.height(54.dp))
+            Spacer(Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

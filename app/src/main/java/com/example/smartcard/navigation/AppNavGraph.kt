@@ -1,5 +1,9 @@
 package com.example.smartcard.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -29,7 +33,11 @@ fun AppNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination,
+        enterTransition = { slideInHorizontally(initialOffsetX = { it / 4 }) + fadeIn() },
+        exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 4 }) + fadeOut() },
+        popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 4 }) + fadeIn() },
+        popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 4 }) + fadeOut() }
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
@@ -66,7 +74,7 @@ fun AppNavGraph(
                 onProfileClick = { navController.navigate("profile") },
 
                 onScanProductClick = { navController.navigate(Screen.Camera.route) },
-                onReceiptClick = { navController.navigate(Screen.SuccessPayment.route) }, // или свой экран
+                onReceiptClick = { navController.navigate("history") },
                 onProductsPurchasedClick = { navController.navigate("history") }, // или свой экран
 
                 onBottomHome = { /* уже Home */ },

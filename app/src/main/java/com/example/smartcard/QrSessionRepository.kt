@@ -1,5 +1,6 @@
 package com.example.smartcard
 
+import com.example.smartcard.local.LocalSessionClient
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,6 +9,61 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object QrSessionRepository {
+
+    /**
+     * Confirm a session via the tablet's embedded local server (no Firebase).
+     * [tabletBaseUrl] e.g. "http://192.168.1.42:8080"
+     */
+    suspend fun confirmLocalSession(
+        traceId: String,
+        sessionId: String,
+        tabletBaseUrl: String,
+    ): Result<String> {
+        return withContext(Dispatchers.IO) {
+            val user = FirebaseAuth.getInstance().currentUser
+            val userId = user?.uid ?: "phone_user_${System.currentTimeMillis()}"
+            val userName = user?.displayName?.takeIf { it.isNotBlank() }
+                ?: user?.email?.substringBefore("@")
+                ?: "Phone User"
+            val userEmail = user?.email ?: ""
+
+            Log.d("LOCAL_CLIENT", "confirm_local_start traceId=$traceId sessionId=$sessionId url=$tabletBaseUrl")
+            QrFlowPhoneLog.d(
+                event = "qr_local_confirm_start",
+                "traceId" to traceId,
+                "sessionId" to sessionId,
+                "tabletBaseUrl" to tabletBaseUrl,
+                "userId" to userId
+            )
+
+            LocalSessionClient.confirmSessionWithRetry(
+                tabletUrl = tabletBaseUrl,
+                sessionId = sessionId,
+                userId = userId,
+                userName = userName,
+                userEmail = userEmail,
+            ).also { result ->
+                if (result.isSuccess) {
+                    Log.d("LOCAL_CLIENT", "confirm_local_success traceId=$traceId sessionId=$sessionId cartId=${result.getOrNull()}")
+                    QrFlowPhoneLog.d(
+                        event = "qr_local_confirm_success",
+                        "traceId" to traceId,
+                        "sessionId" to sessionId,
+                        "cartId" to result.getOrNull()
+                    )
+                } else {
+                    Log.e("LOCAL_CLIENT", "confirm_local_failed traceId=$traceId sessionId=$sessionId error=${result.exceptionOrNull()?.message}")
+                    QrFlowPhoneLog.e(
+                        event = "qr_local_confirm_failed",
+                        throwable = result.exceptionOrNull(),
+                        "traceId" to traceId,
+                        "sessionId" to sessionId,
+                        "tabletBaseUrl" to tabletBaseUrl
+                    )
+                }
+            }
+        }
+    }
 
     suspend fun confirmSession(traceId: String, sessionId: String): Result<String> {
         return withContext(Dispatchers.IO) {

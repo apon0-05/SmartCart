@@ -3,19 +3,17 @@ package com.example.smartcard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -31,68 +29,69 @@ fun CartConnectedScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF6F6F6))
-            .padding(24.dp),
+            .background(AppColors.Background)
+            .padding(horizontal = 24.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(80.dp))
+        Spacer(modifier = Modifier.height(60.dp))
 
         Box(
             modifier = Modifier
-                .size(140.dp)
+                .size(120.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFEAF7F0)),
+                .background(AppColors.SuccessBg),
             contentAlignment = Alignment.Center
         ) {
-            Text("🛒", fontSize = 56.sp)
+            Icon(
+                imageVector = Icons.Default.ShoppingCart,
+                contentDescription = null,
+                tint = AppColors.Success,
+                modifier = Modifier.size(52.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Cart Connected",
-            fontSize = 28.sp,
+            text = "Cart Connected!",
+            fontSize = 26.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF2F2F2F)
+            color = AppColors.TextDark
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Your phone is connected to the trolley.",
-            fontSize = 15.sp,
-            color = Color.Gray
+            text = "Your phone is connected to the cart.",
+            fontSize = 14.sp,
+            color = AppColors.TextHint,
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Cart ID", color = Color.Gray, fontSize = 12.sp)
-                Text(
-                    text = if (resolvedCartId.isNotBlank()) resolvedCartId else "Not available",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2F2F2F)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onBackHome,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFCF6B2D))
+                .clip(AppRadius.Large)
+                .background(AppColors.Surface)
+                .padding(16.dp)
         ) {
-            Text("Back to Home", color = Color.White, fontSize = 16.sp)
+            Text("Cart ID", color = AppColors.TextHint, fontSize = 12.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = if (resolvedCartId.isNotBlank()) resolvedCartId else "Not available",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = AppColors.TextDark
+            )
         }
+
+        Spacer(modifier = Modifier.height(28.dp))
+
+        PrimaryButton(
+            text = "Back to Home",
+            onClick = onBackHome
+        )
     }
 }

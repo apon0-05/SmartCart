@@ -1,6 +1,5 @@
 package com.example.smartcard
 
-import com.example.smartcard.data.remote.Product
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 

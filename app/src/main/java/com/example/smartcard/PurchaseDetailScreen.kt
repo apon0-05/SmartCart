@@ -3,9 +3,12 @@ package com.example.smartcard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+
 @Composable
 fun PurchaseDetailScreen(
     receiptId: String,
@@ -34,10 +38,6 @@ fun PurchaseDetailScreen(
     var receiptData by remember { mutableStateOf<Map<String, Any>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-
-    val bg = Color(0xFFF6F6F6)
-    val textDark = Color(0xFF2F2F2F)
-    val green = Color(0xFF39D10A)
 
     LaunchedEffect(receiptId) {
         val user = auth.currentUser
@@ -69,18 +69,28 @@ fun PurchaseDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(bg)
+            .background(AppColors.Background)
             .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
+        // Back button always visible
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AppBackButton(onClick = onBack)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                "Purchase Details",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = AppColors.TextDark
+            )
+        }
+
+        Spacer(Modifier.height(18.dp))
+
         when {
-            isLoading -> {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
+            isLoading -> AppLoadingState(modifier = Modifier.weight(1f))
 
             error != null -> {
-                Text("Error: $error", color = Color.Red)
+                AppErrorState(message = error!!)
                 Spacer(Modifier.weight(1f))
             }
 
@@ -91,82 +101,86 @@ fun PurchaseDetailScreen(
                 @Suppress("UNCHECKED_CAST")
                 val items = receiptData?.get("items") as? List<Map<String, Any>> ?: emptyList()
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White)
-                            .clickable { onBack() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("‹", fontSize = 22.sp, color = textDark)
-                    }
-                }
-
-                Spacer(Modifier.height(18.dp))
-
-                Text(
-                    "Purchase information",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = textDark,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
-                Spacer(Modifier.height(22.dp))
-
-                Text("Location:", color = textDark, fontSize = 14.sp)
-                Text("Almaty, Kazakhstan", color = textDark, fontSize = 18.sp)
-
-                Spacer(Modifier.height(14.dp))
-
-                Text("Purchaser:", color = textDark, fontSize = 14.sp)
-                Text(FirebaseAuth.getInstance().currentUser?.email ?: "Unknown", color = textDark, fontSize = 18.sp)
-
-                Spacer(Modifier.height(14.dp))
-
-                Text("Date and time:", color = textDark, fontSize = 14.sp)
-                Text(purchaseTime, color = textDark, fontSize = 18.sp)
-
-                Spacer(Modifier.height(20.dp))
-
-                Text("Your purchase:", color = textDark, fontSize = 16.sp)
-                Spacer(Modifier.height(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🟢", fontSize = 14.sp)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Paid", color = green, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                }
-
-                Spacer(Modifier.height(14.dp))
-
                 Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    items.forEach { item ->
-                        PurchaseDetailRow(item = item, textDark = textDark)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(AppRadius.Large)
+                            .background(AppColors.Surface)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        DetailInfoRow(label = "Purchaser", value = FirebaseAuth.getInstance().currentUser?.email ?: "Unknown")
+                        DetailInfoRow(label = "Date", value = purchaseTime)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("Status", color = AppColors.TextHint, fontSize = 13.sp)
+                            Spacer(Modifier.weight(1f))
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = AppColors.Success,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text("Paid", color = AppColors.Success, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    Text(
+                        "Items",
+                        color = AppColors.TextDark,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(AppRadius.Large)
+                            .background(AppColors.Surface)
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items.forEachIndexed { idx, item ->
+                            PurchaseDetailRow(item = item)
+                            if (idx < items.lastIndex) {
+                                HorizontalDivider(color = AppColors.SurfaceAlt)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(AppRadius.Large)
+                            .background(AppColors.Surface)
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Total", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = AppColors.TextDark)
+                        Text("${totalAmount.toInt()} ₸", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppColors.Primary)
+                    }
+
+                    Spacer(Modifier.height(12.dp))
                 }
-
-                HorizontalDivider()
-                Spacer(Modifier.height(18.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Amount", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
-                    Text("${totalAmount.toInt()} ₸", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
-                }
-
-                Spacer(Modifier.height(18.dp))
             }
         }
 
         BottomNavBar(
+            currentTab = NavTab.HISTORY,
             onHome = onBottomHome,
             onBag = onBottomBag,
             onCart = onBottomCart,
@@ -176,10 +190,18 @@ fun PurchaseDetailScreen(
 }
 
 @Composable
-private fun PurchaseDetailRow(
-    item: Map<String, Any>,
-    textDark: Color
-) {
+private fun DetailInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, color = AppColors.TextHint, fontSize = 13.sp)
+        Text(value, color = AppColors.TextDark, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun PurchaseDetailRow(item: Map<String, Any>) {
     val imageUrl = item["imageUrl"] as? String ?: ""
     val emoji = item["imageEmoji"] as? String ?: "🛍️"
     val name = item["name"] as? String ?: ""
@@ -193,9 +215,9 @@ private fun PurchaseDetailRow(
     ) {
         Box(
             modifier = Modifier
-                .size(54.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF4F4F4)),
+                .size(48.dp)
+                .clip(AppRadius.Medium)
+                .background(AppColors.SurfaceAlt),
             contentAlignment = Alignment.Center
         ) {
             if (imageUrl.isNotBlank()) {
@@ -206,23 +228,20 @@ private fun PurchaseDetailRow(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Text(
-                    text = if (emoji.isNotBlank()) emoji else "🛍️",
-                    fontSize = 24.sp
-                )
+                Text(text = emoji.ifBlank { "🛍️" }, fontSize = 22.sp)
             }
         }
 
         Spacer(Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = textDark)
-            Text("${price.toInt()} ₸", fontSize = 14.sp, color = textDark)
+            Text(name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AppColors.TextDark)
+            Text("${price.toInt()} ₸", fontSize = 13.sp, color = AppColors.TextHint)
         }
 
         Column(horizontalAlignment = Alignment.End) {
-            Text("${rowTotal.toInt()} ₸", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = textDark)
-            Text("x $quantity", fontSize = 14.sp, color = textDark)
+            Text("${rowTotal.toInt()} ₸", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppColors.TextDark)
+            Text("×$quantity", fontSize = 12.sp, color = AppColors.TextHint)
         }
     }
 }

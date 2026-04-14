@@ -4,14 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.filled.ShoppingCartCheckout
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,11 +39,6 @@ fun ProfileScreen(
     onBottomCart: () -> Unit,
     onBottomHistory: () -> Unit
 ) {
-    val bg = Color(0xFFF6F6F6)
-    val textDark = Color(0xFF2F2F2F)
-    val hint = Color(0xFF8A8A8A)
-    val active = Color(0xFF29B6F6)
-
     val user = FirebaseAuth.getInstance().currentUser
     val userName =
         user?.displayName?.takeIf { it.isNotBlank() }
@@ -50,15 +46,13 @@ fun ProfileScreen(
             ?: "User"
     val userEmail = user?.email ?: "No email"
 
-    var isLoggingOut by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(bg)
+            .background(AppColors.Background)
             .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
-        Spacer(modifier = Modifier.height(26.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -68,12 +62,14 @@ fun ProfileScreen(
                 modifier = Modifier
                     .size(86.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFB7B8FF)),
+                    .background(AppColors.CardWarm),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "👤",
-                    fontSize = 38.sp
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = AppColors.Primary,
+                    modifier = Modifier.size(42.dp)
                 )
             }
 
@@ -81,74 +77,44 @@ fun ProfileScreen(
 
             Text(
                 text = userName,
-                color = textDark,
-                fontSize = 28.sp,
+                color = AppColors.TextDark,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = userEmail,
-                color = hint,
+                color = AppColors.TextHint,
                 fontSize = 14.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         ProfileMenuCard(
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.PersonOutline,
-                    contentDescription = null,
-                    tint = textDark
-                )
-            },
+            icon = Icons.Default.PersonOutline,
             title = "Personal Data",
             subtitle = userEmail,
             onClick = { }
         )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
+        Spacer(modifier = Modifier.height(10.dp))
         ProfileMenuCard(
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.NotificationsNone,
-                    contentDescription = null,
-                    tint = textDark
-                )
-            },
+            icon = Icons.Default.NotificationsNone,
             title = "Notifications",
             badge = "2",
             onClick = { }
         )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
+        Spacer(modifier = Modifier.height(10.dp))
         ProfileMenuCard(
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCartCheckout,
-                    contentDescription = null,
-                    tint = textDark
-                )
-            },
+            icon = Icons.Default.ShoppingCartCheckout,
             title = "My purchases",
             onClick = onMyPurchases
         )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
+        Spacer(modifier = Modifier.height(10.dp))
         ProfileMenuCard(
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.CreditCard,
-                    contentDescription = null,
-                    tint = textDark
-                )
-            },
+            icon = Icons.Default.CreditCard,
             title = "My cards",
             onClick = { }
         )
@@ -158,8 +124,8 @@ fun ProfileScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(Color.White)
+                .clip(AppRadius.Large)
+                .background(Color(0xFFFFF0EE))
                 .clickable {
                     CartConnectionRepository.disconnectCurrentUserCart(
                         onSuccess = {
@@ -172,28 +138,27 @@ fun ProfileScreen(
                         }
                     )
                 }
-                .padding(horizontal = 18.dp, vertical = 22.dp),
+                .padding(horizontal = 18.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.ExitToApp,
                 contentDescription = null,
-                tint = textDark
+                tint = AppColors.Error
             )
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Text(
-                text = "Exit",
-                color = textDark,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium
+                text = "Sign Out",
+                color = AppColors.Error,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         BottomNavBar(
+            currentTab = NavTab.HOME,
             onHome = onBottomHome,
             onBag = onBottomBag,
             onCart = onBottomCart,
@@ -204,29 +169,34 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileMenuCard(
-    icon: @Composable () -> Unit,
+    icon: ImageVector,
     title: String,
     subtitle: String? = null,
     badge: String? = null,
     onClick: () -> Unit
 ) {
-    val textDark = Color(0xFF2F2F2F)
-    val hint = Color(0xFF8A8A8A)
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White)
+            .clip(AppRadius.Large)
+            .background(AppColors.Surface)
             .clickable { onClick() }
-            .padding(horizontal = 18.dp, vertical = 18.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier
+                .size(38.dp)
+                .clip(AppRadius.Medium)
+                .background(AppColors.SurfaceAlt),
             contentAlignment = Alignment.Center
         ) {
-            icon()
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = AppColors.TextDark,
+                modifier = Modifier.size(20.dp)
+            )
         }
 
         Spacer(modifier = Modifier.width(14.dp))
@@ -235,44 +205,39 @@ private fun ProfileMenuCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title,
-                    color = textDark,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    color = AppColors.TextDark,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
-
                 if (badge != null) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(Color(0xFFFF6A00))
+                            .background(AppColors.Primary)
                             .padding(horizontal = 7.dp, vertical = 2.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = badge,
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
-
             if (subtitle != null) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = subtitle,
-                    color = hint,
-                    fontSize = 14.sp
-                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(text = subtitle, color = AppColors.TextHint, fontSize = 13.sp)
             }
         }
 
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = textDark
+            tint = AppColors.TextHint,
+            modifier = Modifier.size(18.dp)
         )
     }
 }

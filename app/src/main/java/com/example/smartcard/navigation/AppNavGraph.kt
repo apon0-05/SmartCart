@@ -12,6 +12,7 @@ import com.example.smartcard.CartScreen
 import com.example.smartcard.HomeScreen
 import com.example.smartcard.LoginScreen
 import com.example.smartcard.NotificationsScreen
+import com.example.smartcard.PersonalDataScreen
 import com.example.smartcard.ProfileScreen
 import com.example.smartcard.PurchaseDetailScreen
 import com.example.smartcard.PurchaseHistoryScreen
@@ -166,6 +167,9 @@ fun AppNavGraph(
                         popUpTo(0) { inclusive = true }
                     }
                 },
+                onPersonalData = {
+                    navController.navigate("personal_data")
+                },
                 onMyPurchases = {
                     navController.navigate("history")
                 },
@@ -201,6 +205,16 @@ fun AppNavGraph(
 
         composable("notifications") {
             NotificationsScreen(
+                onBack = { navController.popBackStack() },
+                onBottomHome = { navController.navigate(Screen.Home.route) },
+                onBottomBag = { navController.navigate("scan_cart_qr") },
+                onBottomCart = { navController.navigate(Screen.Cart.route) },
+                onBottomHistory = { navController.navigate("history") }
+            )
+        }
+
+        composable("personal_data") {
+            PersonalDataScreen(
                 onBack = { navController.popBackStack() },
                 onBottomHome = { navController.navigate(Screen.Home.route) },
                 onBottomBag = { navController.navigate("scan_cart_qr") },

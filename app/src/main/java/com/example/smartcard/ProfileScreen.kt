@@ -107,6 +107,7 @@ private fun profileTexts(lang: String): ProfileTexts {
 fun ProfileScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit,
+    onPersonalData: () -> Unit,
     onMyPurchases: () -> Unit,
     onNotifications: () -> Unit,
     onBottomHome: () -> Unit,
@@ -187,7 +188,7 @@ fun ProfileScreen(
                 },
                 title = texts.personalData,
                 subtitle = userEmail,
-                onClick = { }
+                onClick = onPersonalData
             )
 
             Spacer(modifier = Modifier.height(12.dp))

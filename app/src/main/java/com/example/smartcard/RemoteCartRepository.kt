@@ -119,64 +119,61 @@ object RemoteCartRepository {
         onSuccess: () -> Unit = {},
         onError: (String) -> Unit = {}
     ) {
-        db.collection("carts")
-            .document(cartId)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                @Suppress("UNCHECKED_CAST")
-                val items = snapshot.get("items") as? List<Map<String, Any>> ?: emptyList()
+        val cartRef = db.collection("carts").document(cartId)
 
-                val mutableItems = items.map { it.toMutableMap() }.toMutableList()
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(cartRef)
 
-                val existingIndex = mutableItems.indexOfFirst {
-                    (it["barcode"] as? String) == product.barcode
-                }
+            @Suppress("UNCHECKED_CAST")
+            val items = snapshot.get("items") as? List<Map<String, Any>> ?: emptyList()
 
-                if (existingIndex >= 0) {
-                    val existing = mutableItems[existingIndex]
-                    val oldQty = (existing["quantity"] as? Number)?.toInt() ?: 0
-                    existing["quantity"] = oldQty + 1
-                    mutableItems[existingIndex] = existing
-                } else {
-                    mutableItems.add(
-                        mutableMapOf(
-                            "name" to product.name,
-                            "brand" to product.brand,
-                            "barcode" to product.barcode,
-                            "price" to product.price,
-                            "quantity" to 1,
-                            "imageUrl" to "",
-                            "imageEmoji" to when (product.barcode) {
-                                "1234567890123" -> "🥛"
-                                "1234567890179" -> "🧼"
-                                "1234567890155" -> "🥔"
-                                else -> "🛍️"
-                            }
-                        )
-                    )
-                }
+            val mutableItems = items.map { it.toMutableMap() }.toMutableList()
 
-                val totalAmount = mutableItems.sumOf { item ->
-                    val price = (item["price"] as? Number)?.toInt() ?: 0
-                    val qty = (item["quantity"] as? Number)?.toInt() ?: 0
-                    price * qty
-                }
-
-                db.collection("carts")
-                    .document(cartId)
-                    .update(
-                        mapOf(
-                            "items" to mutableItems,
-                            "totalAmount" to totalAmount
-                        )
-                    )
-                    .addOnSuccessListener { onSuccess() }
-                    .addOnFailureListener { e ->
-                        onError(e.message ?: "Failed to add product to cart")
-                    }
+            val existingIndex = mutableItems.indexOfFirst {
+                (it["barcode"] as? String) == product.barcode
             }
+
+            if (existingIndex >= 0) {
+                val existing = mutableItems[existingIndex]
+                val oldQty = (existing["quantity"] as? Number)?.toInt() ?: 0
+                existing["quantity"] = oldQty + 1
+                mutableItems[existingIndex] = existing
+            } else {
+                mutableItems.add(
+                    mutableMapOf(
+                        "name" to product.name,
+                        "brand" to product.brand,
+                        "barcode" to product.barcode,
+                        "price" to product.price,
+                        "quantity" to 1,
+                        "imageUrl" to "",
+                        "imageEmoji" to when (product.barcode) {
+                            "1234567890123" -> "🥛"
+                            "1234567890179" -> "🧼"
+                            "1234567890155" -> "🥔"
+                            else -> "🛍️"
+                        }
+                    )
+                )
+            }
+
+            val totalAmount = mutableItems.sumOf { item ->
+                val price = (item["price"] as? Number)?.toInt() ?: 0
+                val qty = (item["quantity"] as? Number)?.toInt() ?: 0
+                price * qty
+            }
+
+            transaction.update(
+                cartRef,
+                mapOf(
+                    "items" to mutableItems,
+                    "totalAmount" to totalAmount
+                )
+            )
+        }
+            .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { e ->
-                onError(e.message ?: "Failed to load cart")
+                onError(e.message ?: "Failed to add product to cart")
             }
     }
 }

@@ -1,14 +1,12 @@
 package com.example.smartcard
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,31 +16,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartcard.localization.LocalAppStrings
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
-
 @Composable
 fun PurchaseDetailScreen(
     receiptId: String,
-    onBack: () -> Unit,
-    onBottomHome: () -> Unit,
-    onBottomBag: () -> Unit,
-    onBottomCart: () -> Unit,
-    onBottomHistory: () -> Unit
+    onBack: () -> Unit
 ) {
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
+    val texts = LocalAppStrings.current
 
     var receiptData by remember { mutableStateOf<Map<String, Any>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
+    val bg = AppColors.Background
+    val textDark = AppColors.TextDark
+    val green = AppColors.Success
+
     LaunchedEffect(receiptId) {
         val user = auth.currentUser
         if (user == null) {
-            error = "User not logged in"
+            Log.e(SmartCartLogTags.PAYMENT, "purchase_detail_load_failed reason=user_not_logged_in receiptId=$receiptId")
+            error = texts.userNotLoggedIn
             isLoading = false
             return@LaunchedEffect
         }
@@ -56,152 +56,126 @@ fun PurchaseDetailScreen(
                 if (doc.exists()) {
                     receiptData = doc.data
                 } else {
-                    error = "Purchase not found"
+                    Log.e(SmartCartLogTags.PAYMENT, "purchase_detail_load_failed reason=not_found receiptId=$receiptId uid=${user.uid}")
+                    error = texts.purchaseNotFound
                 }
                 isLoading = false
             }
             .addOnFailureListener { e ->
-                error = e.message ?: "Failed to load purchase"
+                Log.e(SmartCartLogTags.PAYMENT, "purchase_detail_load_failed reason=firestore_error receiptId=$receiptId uid=${user.uid}", e)
+                error = e.message ?: texts.failedToLoadPurchase
                 isLoading = false
             }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppColors.Background)
+            .background(bg)
             .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
-        // Back button always visible
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AppBackButton(onClick = onBack)
-            Spacer(Modifier.width(12.dp))
-            Text(
-                "Purchase Details",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = AppColors.TextDark
-            )
-        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(18.dp))
+                .background(AppColors.Surface)
+                .padding(18.dp)
+        ) {
+            when {
+                isLoading -> {
+                    Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-        Spacer(Modifier.height(18.dp))
+                error != null -> {
+                    Text("${texts.errorLabel}: $error", color = AppColors.Error)
+                    Spacer(Modifier.weight(1f))
+                }
 
-        when {
-            isLoading -> AppLoadingState(modifier = Modifier.weight(1f))
+                receiptData != null -> {
+                    val purchaseTime = receiptData?.get("purchaseTime") as? String ?: ""
+                    val totalAmount = (receiptData?.get("totalAmount") as? Number)?.toDouble() ?: 0.0
 
-            error != null -> {
-                AppErrorState(message = error!!)
-                Spacer(Modifier.weight(1f))
-            }
+                    @Suppress("UNCHECKED_CAST")
+                    val items = receiptData?.get("items") as? List<Map<String, Any>> ?: emptyList()
 
-            receiptData != null -> {
-                val purchaseTime = receiptData?.get("purchaseTime") as? String ?: ""
-                val totalAmount = (receiptData?.get("totalAmount") as? Number)?.toDouble() ?: 0.0
-
-                @Suppress("UNCHECKED_CAST")
-                val items = receiptData?.get("items") as? List<Map<String, Any>> ?: emptyList()
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(AppRadius.Large)
-                            .background(AppColors.Surface)
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        DetailInfoRow(label = "Purchaser", value = FirebaseAuth.getInstance().currentUser?.email ?: "Unknown")
-                        DetailInfoRow(label = "Date", value = purchaseTime)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text("Status", color = AppColors.TextHint, fontSize = 13.sp)
-                            Spacer(Modifier.weight(1f))
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = AppColors.Success,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text("Paid", color = AppColors.Success, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AppBackButton(onClick = onBack)
                     }
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(18.dp))
 
                     Text(
-                        "Items",
-                        color = AppColors.TextDark,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
+                        texts.purchaseInformation,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = textDark,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
 
+                    Spacer(Modifier.height(22.dp))
+
+                    Text(texts.locationLabel, color = textDark, fontSize = 14.sp)
+                    Text(texts.locationValue, color = textDark, fontSize = 18.sp)
+
+                    Spacer(Modifier.height(14.dp))
+
+                    Text(texts.purchaserLabel, color = textDark, fontSize = 14.sp)
+                    Text(FirebaseAuth.getInstance().currentUser?.email ?: texts.unknown, color = textDark, fontSize = 18.sp)
+
+                    Spacer(Modifier.height(14.dp))
+
+                    Text(texts.dateTimeLabel, color = textDark, fontSize = 14.sp)
+                    Text(purchaseTime, color = textDark, fontSize = 18.sp)
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Text(texts.yourPurchase, color = textDark, fontSize = 16.sp)
                     Spacer(Modifier.height(8.dp))
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(AppRadius.Large)
-                            .background(AppColors.Surface)
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items.forEachIndexed { idx, item ->
-                            PurchaseDetailRow(item = item)
-                            if (idx < items.lastIndex) {
-                                HorizontalDivider(color = AppColors.SurfaceAlt)
-                            }
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🟢", fontSize = 14.sp)
+                        Spacer(Modifier.width(6.dp))
+                        Text(texts.paid, color = green, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
 
                     Spacer(Modifier.height(14.dp))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(AppRadius.Large)
-                            .background(AppColors.Surface)
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Text("Total", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = AppColors.TextDark)
-                        Text("${totalAmount.toInt()} ₸", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppColors.Primary)
+                        items.forEach { item ->
+                            PurchaseDetailRow(item = item, textDark = textDark)
+                        }
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(Modifier.height(18.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(texts.amount, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
+                        Text("${totalAmount.toInt()} ${texts.tenge}", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textDark)
+                    }
+
+                    Spacer(Modifier.height(18.dp))
                 }
             }
+
+            Spacer(Modifier.height(2.dp))
         }
-
-        BottomNavBar(
-            currentTab = NavTab.HISTORY,
-            onHome = onBottomHome,
-            onBag = onBottomBag,
-            onCart = onBottomCart,
-            onHistory = onBottomHistory
-        )
     }
 }
 
 @Composable
-private fun DetailInfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(label, color = AppColors.TextHint, fontSize = 13.sp)
-        Text(value, color = AppColors.TextDark, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun PurchaseDetailRow(item: Map<String, Any>) {
+private fun PurchaseDetailRow(
+    item: Map<String, Any>,
+    textDark: Color
+) {
     val imageUrl = item["imageUrl"] as? String ?: ""
     val emoji = item["imageEmoji"] as? String ?: "🛍️"
     val name = item["name"] as? String ?: ""
@@ -215,8 +189,8 @@ private fun PurchaseDetailRow(item: Map<String, Any>) {
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(AppRadius.Medium)
+                .size(54.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(AppColors.SurfaceAlt),
             contentAlignment = Alignment.Center
         ) {
@@ -228,20 +202,23 @@ private fun PurchaseDetailRow(item: Map<String, Any>) {
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Text(text = emoji.ifBlank { "🛍️" }, fontSize = 22.sp)
+                Text(
+                    text = if (emoji.isNotBlank()) emoji else "🛍️",
+                    fontSize = 24.sp
+                )
             }
         }
 
         Spacer(Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AppColors.TextDark)
-            Text("${price.toInt()} ₸", fontSize = 13.sp, color = AppColors.TextHint)
+            Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = textDark)
+            Text("${price.toInt()} ${LocalAppStrings.current.tenge}", fontSize = 14.sp, color = textDark)
         }
 
         Column(horizontalAlignment = Alignment.End) {
-            Text("${rowTotal.toInt()} ₸", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppColors.TextDark)
-            Text("×$quantity", fontSize = 12.sp, color = AppColors.TextHint)
+            Text("${rowTotal.toInt()} ${LocalAppStrings.current.tenge}", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = textDark)
+            Text("x $quantity", fontSize = 14.sp, color = textDark)
         }
     }
 }

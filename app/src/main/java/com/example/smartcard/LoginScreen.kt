@@ -2,393 +2,170 @@ package com.example.smartcard
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import android.content.Context
-import androidx.compose.runtime.rememberCoroutineScope
+import com.example.smartcard.localization.LocalAppStrings
+import com.example.smartcard.ui.components.SmartCartGoogleAuthButton
+import com.example.smartcard.ui.components.SmartCartHeaderShape
+import com.example.smartcard.ui.components.SmartCartInputField
+import com.example.smartcard.ui.components.SmartCartPasswordInputField
+import com.example.smartcard.ui.components.SmartCartPrimaryActionButton
+import com.example.smartcard.ui.components.SmartCartSecondaryOutlineButton
+import com.example.smartcard.ui.components.SmartCartSegmentedLine
 import com.example.smartcard.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
 
-suspend fun signInWithGoogle(
-    context: Context,
-    onSuccess: () -> Unit,
-    onError: (String) -> Unit
-) {
-    // TO DO: implement Google sign-in logic here
-}
+private const val WEB_CLIENT_ID =
+    "1090740511419-bo6team9gnufaaesjcieo15rciq4lbjk.apps.googleusercontent.com"
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onSignUp: () -> Unit
+    onSignUp: () -> Unit,
 ) {
     val vm: AuthViewModel = viewModel()
+    val texts = LocalAppStrings.current
+    val context = LocalContext.current
 
-    var email by remember { mutableStateOf("apon@gmail.com") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-
-    val orange = Color(0xFFCF6B2D)
-    val orangeSoft = Color(0xFFF2C3A7)
-    val textDark = Color(0xFF2F2F2F)
-    val hintGray = Color(0xFF9A9A9A)
-    val fieldBorder = Color(0xFF7A6D76)
 
     val msg by vm.message.collectAsState()
     val loading by vm.loading.collectAsState()
 
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val canSubmit = !loading && email.isNotBlank() && password.length >= 8
 
+    val googleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        vm.handleGoogleResult(
+            data = result.data,
+            resultCode = result.resultCode,
+            webClientId = WEB_CLIENT_ID,
+            packageName = context.packageName,
+            onSuccess = { onLoginSuccess() }
+        )
+    }
 
+    if (msg != null) {
+        AlertDialog(
+            onDismissRequest = { vm.clearMessage() },
+            confirmButton = {
+                TextButton(onClick = { vm.clearMessage() }) { Text(texts.ok) }
+            },
+            title = { Text(texts.info) },
+            text = { Text(msg!!) }
+        )
+    }
 
-
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(vertical = 14.dp)
+            .background(AppColors.Background)
+            .padding(horizontal = 22.dp, vertical = 12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFFAFAFA))
-        ) {
+        Column {
+            SmartCartHeaderShape(
+                title = texts.login,
+                subtitle = texts.cantLogin,
+                badge = {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_cart_phone),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            )
 
-            LoginHeaderWave(
+            Spacer(Modifier.height(18.dp))
+
+            SmartCartInputField(
+                label = texts.email,
+                value = email,
+                onValueChange = { email = it },
+                placeholder = texts.emailPlaceholder
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            SmartCartPasswordInputField(
+                label = texts.password,
+                value = password,
+                onValueChange = { password = it },
+                placeholder = texts.passwordHint
+            )
+
+            Spacer(Modifier.height(9.dp))
+            SmartCartSegmentedLine()
+
+            Spacer(Modifier.height(14.dp))
+
+            SmartCartPrimaryActionButton(
+                text = texts.login,
+                onClick = { vm.login(email, password) { onLoginSuccess() } },
+                enabled = canSubmit,
+                loading = loading
+            )
+        }
+
+        Spacer(Modifier.height(18.dp))
+
+        Column {
+            SmartCartGoogleAuthButton(
+                text = texts.loginWithGoogle,
+                onClick = {
+                    vm.clearMessage()
+                    val intent = vm.googleSignInIntent(context, WEB_CLIENT_ID)
+                    googleLauncher.launch(intent)
+                },
+                enabled = !loading
+            )
+
+            Spacer(Modifier.height(18.dp))
+
+            Text(
+                text = texts.dontHaveAccount,
+                color = AppColors.TextHint,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp),
-                backgroundTop = orangeSoft,
-                backgroundBottom = Color(0xFFF5D7C7),
-                titleColor = textDark
+                    .padding(bottom = 8.dp),
+                textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(22.dp))
+            SmartCartSecondaryOutlineButton(
+                text = texts.signUp,
+                onClick = onSignUp,
+                enabled = !loading
+            )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-
-                LabeledOutlinedField(
-                    label = "Email",
-                    value = email,
-                    onValueChange = { email = it },
-                    placeholder = "name@email.com",
-                    borderColor = fieldBorder,
-                    hintColor = hintGray,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                )
-
-                Spacer(Modifier.height(14.dp))
-
-                LabeledOutlinedField(
-                    label = "Password",
-                    value = password,
-                    onValueChange = { password = it },
-                    placeholder = "At least 8 characters",
-                    borderColor = fieldBorder,
-                    hintColor = hintGray,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    isPassword = true
-                )
-
-                Spacer(Modifier.height(18.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    repeat(4) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(3.dp)
-                                .padding(horizontal = 8.dp)
-                                .clip(RoundedCornerShape(100.dp))
-                                .background(Color(0xFFD7D7D7))
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(18.dp))
-
-                if (msg != null) {
-                    AlertDialog(
-                        onDismissRequest = { vm.clearMessage() },
-                        confirmButton = {
-                            TextButton(onClick = { vm.clearMessage() }) { Text("OK") }
-                        },
-                        title = { Text("Info") },
-                        text = { Text(msg!!) }
-                    )
-                }
-
-                GradientPrimaryButton(
-                    text = if (loading) "Loading..." else "Log in",
-                    enabled = !loading && email.isNotBlank() && password.length >= 8,
-                    gradient = Brush.horizontalGradient(listOf(Color(0xFFF1C2A6), orange)),
-                    onClick = {
-                        vm.login(email, password) { onLoginSuccess() }
-                    }
-                )
-
-                Spacer(Modifier.height(90.dp))
-
-                GoogleButtonLogin(
-                    enabled = !loading,
-                    onClick = {
-                        scope.launch {
-                            signInWithGoogle(
-                                context = context,
-                                onSuccess = {
-                                    onLoginSuccess()
-                                },
-                                onError = { error ->
-                                    println("Google sign-in error: $error")
-                                }
-                            )
-                        }
-                    }
-                )
-
-                Spacer(Modifier.height(22.dp))
-
-                Text(
-                    text = "Don’t have an account?",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    color = Color(0xFF8A8A8A),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(Modifier.height(14.dp))
-
-                OutlinedButton(
-                    onClick = onSignUp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(2.dp, orange),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = orange
-                    )
-                ) {
-                    Text("Sign up", fontWeight = FontWeight.SemiBold)
-                }
-
-                Spacer(Modifier.height(18.dp))
-            }
+            Spacer(Modifier.height(12.dp))
         }
-    }
-}
-
-@Composable
-private fun LoginHeaderWave(
-    modifier: Modifier,
-    backgroundTop: Color,
-    backgroundBottom: Color,
-    titleColor: Color
-) {
-    Box(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .drawBehind {
-                    val w = size.width
-                    val h = size.height
-
-                    drawRect(brush = Brush.verticalGradient(listOf(backgroundTop, backgroundBottom)))
-
-                    drawRoundRect(
-                        color = Color(0xFFFAFAFA),
-                        topLeft = Offset(w * 0.62f, h * 0.02f),
-                        size = Size(w * 0.75f, h * 0.98f),
-                        cornerRadius = CornerRadius(h * 0.65f, h * 0.65f)
-                    )
-                }
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 22.dp, top = 22.dp, end = 18.dp)
-        ) {
-            Spacer(Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Log in",
-                        color = titleColor,
-                        fontSize = 44.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = "Can’t log in?",
-                        color = titleColor.copy(alpha = 0.85f),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(74.dp)
-                        .clip(CircleShape)
-                        .background(Color.White),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("🛒", fontSize = 28.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LabeledOutlinedField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    borderColor: Color,
-    hintColor: Color,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    isPassword: Boolean = false
-) {
-    Column {
-        Text(
-            text = label,
-            color = Color(0xFFE07A46),
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(start = 10.dp, bottom = 6.dp)
-        )
-
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp),
-            singleLine = true,
-            placeholder = { Text(placeholder, color = hintColor) },
-            keyboardOptions = keyboardOptions,
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = borderColor,
-                unfocusedBorderColor = borderColor.copy(alpha = 0.9f),
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                cursorColor = Color(0xFFCF6B2D)
-            )
-        )
-    }
-}
-
-@Composable
-private fun GradientPrimaryButton(
-    text: String,
-    enabled: Boolean,
-    gradient: Brush,
-    onClick: () -> Unit
-) {
-    val shape = RoundedCornerShape(16.dp)
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(shape)
-            .background(
-                if (enabled) gradient
-                else Brush.horizontalGradient(listOf(Color(0xFFE6E6E6), Color(0xFFD9D9D9)))
-            )
-            .clickable(enabled = enabled) { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = if (enabled) Color.White else Color(0xFF9B9B9B),
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
-        )
-    }
-}
-
-@Composable
-private fun GoogleButtonLogin(
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    OutlinedButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(54.dp),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFFE3E3E3)),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.White,
-            contentColor = Color(0xFF2F2F2F)
-        )
-    ) {
-        Text(
-            text = "G",
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier
-                .size(22.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFF1F1F1))
-                .wrapContentSize(Alignment.Center)
-        )
-        Spacer(Modifier.width(10.dp))
-        Text("Log in with Google", fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFF6F6F6)
-@Composable
-private fun PreviewLogin() {
-    MaterialTheme(colorScheme = lightColorScheme()) {
-        LoginScreen(
-            onLoginSuccess = {},
-            onSignUp = {}
-        )
     }
 }

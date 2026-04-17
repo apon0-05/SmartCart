@@ -3,95 +3,106 @@ package com.example.smartcard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartcard.localization.LocalAppStrings
 
 @Composable
 fun CartConnectedScreen(
-    cartId: String,
+    cartIdArg: String = "",
     onBackHome: () -> Unit
 ) {
-    val resolvedCartId = cartId.takeIf { it.isNotBlank() }
+    val texts = LocalAppStrings.current
+    val resolvedArg = cartIdArg.takeIf { it.isNotBlank() }
+    LaunchedEffect(resolvedArg) {
+        if (!resolvedArg.isNullOrBlank()) {
+            CartConnectionSession.updateConnection(resolvedArg)
+        }
+    }
+
+    val cartId = cartIdArg.takeIf { it.isNotBlank() }
         ?: CartConnectionSession.connectedCartId
+        ?: CartConnectionSession.lastKnownConnectedCartId
         ?: ""
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.Background)
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(60.dp))
+        Spacer(modifier = Modifier.height(80.dp))
 
         Box(
             modifier = Modifier
-                .size(120.dp)
+                .size(140.dp)
                 .clip(CircleShape)
                 .background(AppColors.SuccessBg),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.ShoppingCart,
-                contentDescription = null,
-                tint = AppColors.Success,
-                modifier = Modifier.size(52.dp)
-            )
+            Text("🛒", fontSize = 56.sp)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Cart Connected!",
-            fontSize = 26.sp,
+            text = texts.cartConnected,
+            fontSize = 28.sp,
             fontWeight = FontWeight.ExtraBold,
             color = AppColors.TextDark
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "Your phone is connected to the cart.",
-            fontSize = 14.sp,
-            color = AppColors.TextHint,
-            textAlign = TextAlign.Center
+            text = texts.cartConnectedDesc,
+            fontSize = 15.sp,
+            color = AppColors.TextHint
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(AppRadius.Large)
-                .background(AppColors.Surface)
-                .padding(16.dp)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = AppColors.Surface)
         ) {
-            Text("Cart ID", color = AppColors.TextHint, fontSize = 12.sp)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = if (resolvedCartId.isNotBlank()) resolvedCartId else "Not available",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = AppColors.TextDark
-            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(texts.cartId, color = AppColors.TextHint, fontSize = 12.sp)
+                Text(
+                    text = if (cartId.isNotBlank()) cartId else texts.notAvailable,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.TextDark
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        PrimaryButton(
-            text = "Back to Home",
-            onClick = onBackHome
-        )
+        Button(
+            onClick = onBackHome,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary)
+        ) {
+            Text(texts.backToHome, color = AppColors.Surface, fontSize = 16.sp)
+        }
     }
 }

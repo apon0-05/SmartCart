@@ -1,0 +1,69 @@
+<resources>
+    <string name="app_name">SmartCard</string>
+    <string name="default_web_client_id">642371715222-kdj3gu1l7k2husvf021iv1uj3chjm9ut.apps.googleusercontent.com</string>
+
+    <string name="email">Электронная почта</string>
+    <string name="email_placeholder">name@email.com</string>
+    <string name="password">Пароль</string>
+    <string name="password_hint">Минимум 8 символов</string>
+    <string name="login">Войти</string>
+    <string name="cant_login">Не удаётся войти?</string>
+    <string name="loading">Загрузка...</string>
+    <string name="info">Информация</string>
+    <string name="ok">ОК</string>
+    <string name="login_with_google">Войти через Google</string>
+    <string name="dont_have_account">Нет аккаунта?</string>
+    <string name="sign_up">Зарегистрироваться</string>
+
+    <string name="sign_up_title">Регистрация</string>
+    <string name="sign_up_subtitle">Пожалуйста, введите свои данные</string>
+    <string name="full_name">Полное имя</string>
+    <string name="enter_full_name">Введите полное имя</string>
+    <string name="enter_email">Введите email</string>
+    <string name="confirm_password">Подтвердите пароль</string>
+    <string name="agree_with">Я согласен с</string>
+    <string name="terms">Условиями</string>
+    <string name="and">и</string>
+    <string name="privacy">Политикой конфиденциальности</string>
+    <string name="already_have_account">Уже есть аккаунт?</string>
+
+    <string name="error_enter_full_name">Пожалуйста, введите полное имя</string>
+    <string name="error_enter_email">Пожалуйста, введите email</string>
+    <string name="error_password_length">Пароль должен содержать минимум 8 символов</string>
+    <string name="error_passwords_not_match">Пароли не совпадают</string>
+    <string name="error_agree_terms">Пожалуйста, согласитесь с условиями и политикой конфиденциальности</string>
+
+    <string name="good_afternoon">Добрый день 👋🏻</string>
+    <string name="welcome_to">ДОБРО ПОЖАЛОВАТЬ В</string>
+    <string name="smart">умную</string>
+    <string name="shopping">покупательскую</string>
+    <string name="cart">корзину</string>
+    <string name="scan_product">Сканировать товар</string>
+    <string name="scanner_count">384 сканирований</string>
+    <string name="receipt_tax_invoice">Чек / налоговая накладная</string>
+    <string name="detected_count">Обнаружено 23</string>
+    <string name="products_purchased">Купленные товары</string>
+
+
+
+    <string name="language">Язык</string>
+    <string name="kazakh">Қазақша</string>
+    <string name="russian">Русский</string>
+    <string name="english">English</string>
+
+    <string name="personal_data">Личные данные</string>
+    <string name="notifications">Уведомления</string>
+    <string name="my_purchases">Мои покупки</string>
+    <string name="my_cards">Мои карты</string>
+    <string name="exit">Выйти</string>
+    <string name="user">Пользователь</string>
+    <string name="no_email">Нет email</string>
+    <string name="choose_app_language">Выберите язык приложения</string>
+
+    <plurals name="purchase_count">
+        <item quantity="one">%d покупка</item>
+        <item quantity="few">%d покупки</item>
+        <item quantity="many">%d покупок</item>
+        <item quantity="other">%d покупки</item>
+    </plurals>
+</resources>

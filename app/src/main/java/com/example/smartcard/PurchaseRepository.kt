@@ -1,5 +1,6 @@
 package com.example.smartcard
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
@@ -17,9 +18,11 @@ object PurchaseRepository {
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
+        Log.d(SmartCartLogTags.PAYMENT, "payment_start items=${cartItems.size}")
         val currentUser = auth.currentUser
 
         if (currentUser == null) {
+            Log.e(SmartCartLogTags.PAYMENT, "payment_failed reason=user_not_logged_in")
             onError("User is not logged in")
             return
         }
@@ -77,13 +80,20 @@ object PurchaseRepository {
                     .document(receiptId)
                     .set(purchaseData)
                     .addOnSuccessListener {
+                        SmartCartUiCache.setPurchaseCount(
+                            uid,
+                            (SmartCartUiCache.getPurchaseCount(uid) ?: 0) + 1
+                        )
+                        Log.d(SmartCartLogTags.PAYMENT, "payment_success uid=$uid receiptId=$receiptId amount=$totalAmount")
                         onSuccess(receiptId)
                     }
                     .addOnFailureListener { e ->
+                        Log.e(SmartCartLogTags.PAYMENT, "payment_failed uid=$uid reason=save_purchase_failed", e)
                         onError(e.message ?: "Failed to save purchase")
                     }
             }
             .addOnFailureListener { e ->
+                Log.e(SmartCartLogTags.PAYMENT, "payment_failed uid=$uid reason=save_user_failed", e)
                 onError(e.message ?: "Failed to save user")
             }
     }

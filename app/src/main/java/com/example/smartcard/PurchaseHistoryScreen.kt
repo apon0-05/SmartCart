@@ -1,36 +1,46 @@
 package com.example.smartcard
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.smartcard.localization.LocalAppStrings
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun PurchaseHistoryScreen(
     onBack: () -> Unit,
-    onOpenPurchase: (String) -> Unit,
-    onBottomHome: () -> Unit,
-    onBottomBag: () -> Unit,
-    onBottomCart: () -> Unit,
-    onBottomHistory: () -> Unit
+    onOpenPurchase: (String) -> Unit
 ) {
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
@@ -39,10 +49,12 @@ fun PurchaseHistoryScreen(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    val texts = LocalAppStrings.current
+
     LaunchedEffect(Unit) {
         val user = auth.currentUser
         if (user == null) {
-            error = "User not logged in"
+            error = texts.userNotLoggedIn
             isLoading = false
             return@LaunchedEffect
         }
@@ -66,7 +78,13 @@ fun PurchaseHistoryScreen(
                 isLoading = false
             }
             .addOnFailureListener { e ->
-                error = e.message ?: "Failed to load history"
+                Log.e(SmartCartLogTags.PAYMENT, "history_load_failed uid=${user.uid}", e)
+                QrFlowPhoneLog.e(
+                    event = "history_load_failed",
+                    throwable = e,
+                    "where" to "users/{uid}/purchases"
+                )
+                error = friendlyHistoryError(e, texts)
                 isLoading = false
             }
     }
@@ -75,70 +93,72 @@ fun PurchaseHistoryScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.Background)
-            .padding(horizontal = 18.dp, vertical = 14.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppBackButton(onClick = onBack)
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.weight(1f))
             Text(
-                "History",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = AppColors.TextDark
+                text = texts.orderCompleted,
+                color = AppColors.TextSubtle,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1
             )
         }
 
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(14.dp))
+
+        Text(
+            text = texts.history,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = AppColors.TextDark
+        )
+
+        Spacer(Modifier.height(16.dp))
 
         when {
-            isLoading -> AppLoadingState(modifier = Modifier.weight(1f))
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = AppColors.Primary)
+                }
+            }
 
             error != null -> {
-                AppErrorState(message = error!!)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = texts.couldNotLoadHistory,
+                        color = AppColors.Error,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = error!!,
+                        color = AppColors.TextSubtle,
+                        fontSize = 13.sp
+                    )
+                }
                 Spacer(Modifier.weight(1f))
             }
 
             purchases.isEmpty() -> {
-                Column(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(AppRadius.Large)
-                            .background(AppColors.CardWarm),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.History,
-                            contentDescription = null,
-                            tint = AppColors.Primary,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        "No purchases yet",
-                        color = AppColors.TextDark,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Your purchase history will appear here",
-                        color = AppColors.TextHint,
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                Text(texts.noPurchasesYet, color = AppColors.TextSubtle)
+                Spacer(Modifier.weight(1f))
             }
 
             else -> {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(purchases) { purchase ->
                         PurchaseHistoryCard(
@@ -149,14 +169,15 @@ fun PurchaseHistoryScreen(
                 }
             }
         }
+    }
+}
 
-        BottomNavBar(
-            currentTab = NavTab.HISTORY,
-            onHome = onBottomHome,
-            onBag = onBottomBag,
-            onCart = onBottomCart,
-            onHistory = onBottomHistory
-        )
+private fun friendlyHistoryError(error: Throwable, texts: com.example.smartcard.localization.AppStrings): String {
+    val msg = error.message?.lowercase().orEmpty()
+    return if ("permission" in msg || "denied" in msg) {
+        texts.historyAccessTemporarilyUnavailable
+    } else {
+        texts.historyCheckConnectionAndRetry
     }
 }
 
@@ -165,73 +186,78 @@ private fun PurchaseHistoryCard(
     purchase: PurchaseHistoryItem,
     onClick: () -> Unit
 ) {
+    val texts = LocalAppStrings.current
+    val firstItem = purchase.items.firstOrNull()
+    val imageUrl = firstItem?.get("imageUrl") as? String ?: ""
+    val emoji = firstItem?.get("imageEmoji") as? String ?: "🛍️"
+    val itemName = firstItem?.get("name") as? String ?: firstItem?.get("productName") as? String ?: "—"
+    val rightTop = "${purchase.totalItems.coerceAtLeast(1)} ${texts.itemsLabel}: ${purchase.totalAmount.toInt()} ${texts.currency}"
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppRadius.Large)
-            .background(AppColors.Surface)
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppColors.SurfaceAlt)
             .clickable { onClick() }
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Box(
-                modifier = Modifier
-                    .clip(AppRadius.Small)
-                    .background(AppColors.SuccessBg)
-                    .padding(horizontal = 12.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    "Paid",
-                    color = AppColors.Success,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(AppColors.Surface),
+            contentAlignment = Alignment.Center
+        ) {
+            if (imageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = itemName,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            Text(
-                purchase.purchaseTime,
-                color = AppColors.TextDark,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                purchase.items.take(4).forEach { item ->
-                    val imageUrl = item["imageUrl"] as? String ?: ""
-                    val emoji = item["imageEmoji"] as? String ?: "🛍️"
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(AppRadius.Small)
-                            .background(AppColors.SurfaceAlt),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (imageUrl.isNotBlank()) {
-                            AsyncImage(
-                                model = imageUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Text(text = emoji.ifBlank { "🛍️" }, fontSize = 14.sp)
-                        }
-                    }
-                }
+            } else {
+                Text(text = if (emoji.isNotBlank()) emoji else "🛍️", fontSize = 28.sp)
             }
         }
 
-        Text(
-            text = "${purchase.totalAmount.toInt()} ₸",
-            color = AppColors.Primary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = itemName,
+                color = AppColors.TextDark,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = "${texts.orderNumberPrefix}${purchase.receiptId.take(8)}",
+                color = AppColors.TextSubtle,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = rightTop,
+                color = AppColors.TextDark,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = purchase.purchaseTime,
+                color = AppColors.TextHint,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
     }
 }

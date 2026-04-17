@@ -1,14 +1,16 @@
 package com.example.smartcard
 
 import com.example.smartcard.local.LocalSessionClient
+import android.util.Log
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object QrSessionRepository {
+
+    private fun normalizeStatus(raw: String?): String = raw?.trim()?.lowercase().orEmpty()
 
     /**
      * Confirm a session via the tablet's embedded local server (no Firebase).
@@ -28,6 +30,7 @@ object QrSessionRepository {
             val userEmail = user?.email ?: ""
 
             Log.d("LOCAL_CLIENT", "confirm_local_start traceId=$traceId sessionId=$sessionId url=$tabletBaseUrl")
+            Log.d(SmartCartLogTags.QR, "confirm_local_start traceId=$traceId sessionId=$sessionId")
             QrFlowPhoneLog.d(
                 event = "qr_local_confirm_start",
                 "traceId" to traceId,
@@ -45,6 +48,7 @@ object QrSessionRepository {
             ).also { result ->
                 if (result.isSuccess) {
                     Log.d("LOCAL_CLIENT", "confirm_local_success traceId=$traceId sessionId=$sessionId cartId=${result.getOrNull()}")
+                    Log.d(SmartCartLogTags.QR, "confirm_local_success traceId=$traceId sessionId=$sessionId cartId=${result.getOrNull()}")
                     QrFlowPhoneLog.d(
                         event = "qr_local_confirm_success",
                         "traceId" to traceId,
@@ -53,6 +57,11 @@ object QrSessionRepository {
                     )
                 } else {
                     Log.e("LOCAL_CLIENT", "confirm_local_failed traceId=$traceId sessionId=$sessionId error=${result.exceptionOrNull()?.message}")
+                    Log.e(
+                        SmartCartLogTags.QR,
+                        "confirm_local_failed traceId=$traceId sessionId=$sessionId error=${result.exceptionOrNull()?.message}",
+                        result.exceptionOrNull()
+                    )
                     QrFlowPhoneLog.e(
                         event = "qr_local_confirm_failed",
                         throwable = result.exceptionOrNull(),
@@ -86,6 +95,7 @@ object QrSessionRepository {
                     "QR_FLOW_SESSION",
                     "phone_confirm_start traceId=$traceId sessionId=$sessionId firestorePath=tabletSessions/$sessionId"
                 )
+                Log.d(SmartCartLogTags.QR, "confirm_cloud_start traceId=$traceId sessionId=$sessionId")
 
                 QrFlowPhoneLog.d(
                     event = "qr_session_confirm_start",
@@ -128,21 +138,49 @@ object QrSessionRepository {
                         throw IllegalStateException("Session not found")
                     }
 
-                    val status = freshSession.getString("status") ?: "pending"
-                    if (status == "confirmed") {
-                        return@runTransaction
+                    val currentStatus = normalizeStatus(freshSession.getString("status")).ifBlank { "pending" }
+                    val existingConfirmedUserId = freshSession.getString("confirmedUserId")?.trim().orEmpty()
+                    val isIdempotentSameOwner = currentStatus == "confirmed" && existingConfirmedUserId == user.uid
+                    val shouldWriteSessionConfirm = currentStatus == "pending"
+
+                    when {
+                        shouldWriteSessionConfirm -> Unit
+                        isIdempotentSameOwner -> {
+                            Log.d(
+                                SmartCartLogTags.QR,
+                                "confirm_idempotent_success traceId=$traceId sessionId=$sessionId userId=${user.uid}"
+                            )
+                        }
+                        currentStatus == "confirmed" && existingConfirmedUserId.isNotBlank() && existingConfirmedUserId != user.uid -> {
+                            Log.e(
+                                SmartCartLogTags.QR,
+                                "confirm_rejected_already_owned traceId=$traceId sessionId=$sessionId ownerUserId=$existingConfirmedUserId requesterUserId=${user.uid}"
+                            )
+                            throw IllegalStateException("Session already confirmed by another user")
+                        }
+                        else -> {
+                            Log.e(
+                                SmartCartLogTags.QR,
+                                "invalid_session_transition actor=phone from=$currentStatus to=confirmed sessionId=$sessionId"
+                            )
+                            throw IllegalStateException(
+                                "Invalid session transition for phone: $currentStatus -> confirmed"
+                            )
+                        }
                     }
 
-                    tx.update(
-                        sessionRef,
-                        mapOf(
-                            "status" to "confirmed",
-                            "confirmedAt" to System.currentTimeMillis(),
-                            "confirmedUserId" to user.uid,
-                            "confirmedUserEmail" to (user.email ?: ""),
-                            "confirmedUserName" to userName
+                    if (shouldWriteSessionConfirm) {
+                        tx.update(
+                            sessionRef,
+                            mapOf(
+                                "status" to "confirmed",
+                                "confirmedAt" to System.currentTimeMillis(),
+                                "confirmedUserId" to user.uid,
+                                "confirmedUserEmail" to (user.email ?: ""),
+                                "confirmedUserName" to userName
+                            )
                         )
-                    )
+                    }
 
                     tx.set(
                         cartRef,
@@ -172,9 +210,11 @@ object QrSessionRepository {
                     "QR_FLOW_SESSION",
                     "phone_confirm_success traceId=$traceId sessionId=$sessionId cartId=$cartId firestorePath=tabletSessions/$sessionId"
                 )
+                Log.d(SmartCartLogTags.QR, "confirm_cloud_success traceId=$traceId sessionId=$sessionId cartId=$cartId")
 
                 Result.success(cartId)
             } catch (t: Throwable) {
+                Log.e(SmartCartLogTags.QR, "confirm_cloud_failed traceId=$traceId sessionId=$sessionId", t)
                 QrFlowPhoneLog.e(
                     event = "exception",
                     throwable = t,

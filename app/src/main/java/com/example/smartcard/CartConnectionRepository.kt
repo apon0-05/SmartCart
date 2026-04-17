@@ -1,5 +1,6 @@
 package com.example.smartcard
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
@@ -16,6 +17,15 @@ object CartConnectionRepository {
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
+        if (ScanPayloadClassifier.classify(cartId) == ScanPayloadType.PRODUCT_BARCODE) {
+            QrFlowPhoneLog.d(
+                event = "cart_connect_rejected_product_like",
+                "cartId" to cartId
+            )
+            onError("Use product scanner for this barcode")
+            return
+        }
+
         val user = auth.currentUser
         if (user == null) {
             QrFlowPhoneLog.d(
@@ -79,7 +89,8 @@ object CartConnectionRepository {
 
                 cartRef.update(updateData)
                     .addOnSuccessListener {
-                        CartConnectionSession.connectedCartId = cartId
+                        CartConnectionSession.updateConnection(cartId)
+                        Log.d(SmartCartLogTags.CART, "connect_success cartId=$cartId userId=${user.uid}")
                         QrFlowPhoneLog.d(
                             event = "cart_connect_success",
                             "cartId" to cartId,
@@ -88,6 +99,7 @@ object CartConnectionRepository {
                         onSuccess()
                     }
                     .addOnFailureListener { e ->
+                        Log.e(SmartCartLogTags.CART, "connect_update_failed cartId=$cartId userId=${user.uid}", e)
                         QrFlowPhoneLog.e(
                             event = "exception",
                             throwable = e,
@@ -99,6 +111,7 @@ object CartConnectionRepository {
                     }
             }
             .addOnFailureListener { e ->
+                Log.e(SmartCartLogTags.CART, "connect_load_failed cartId=$cartId userId=${user.uid}", e)
                 QrFlowPhoneLog.e(
                     event = "exception",
                     throwable = e,
@@ -127,10 +140,12 @@ object CartConnectionRepository {
             .document(cartId)
             .update(clearData)
             .addOnSuccessListener {
-                CartConnectionSession.connectedCartId = null
+                CartConnectionSession.updateConnection(null)
+                Log.d(SmartCartLogTags.CART, "disconnect_success cartId=$cartId")
                 onSuccess()
             }
             .addOnFailureListener { e ->
+                Log.e(SmartCartLogTags.CART, "disconnect_failed cartId=$cartId", e)
                 onError(e.message ?: "Failed to disconnect cart")
             }
     }
@@ -153,7 +168,8 @@ object CartConnectionRepository {
                 val doc = result.documents.firstOrNull()
 
                 if (doc == null) {
-                    CartConnectionSession.connectedCartId = null
+                    CartConnectionSession.updateConnection(null)
+                    Log.d(SmartCartLogTags.CART, "disconnect_current_no_connected_cart userId=${user.uid}")
                     onSuccess()
                     return@addOnSuccessListener
                 }
@@ -170,14 +186,17 @@ object CartConnectionRepository {
                     .document(doc.id)
                     .update(clearData)
                     .addOnSuccessListener {
-                        CartConnectionSession.connectedCartId = null
+                        CartConnectionSession.updateConnection(null)
+                        Log.d(SmartCartLogTags.CART, "disconnect_current_success cartId=${doc.id} userId=${user.uid}")
                         onSuccess()
                     }
                     .addOnFailureListener { e ->
+                        Log.e(SmartCartLogTags.CART, "disconnect_current_failed cartId=${doc.id} userId=${user.uid}", e)
                         onError(e.message ?: "Failed to disconnect cart")
                     }
             }
             .addOnFailureListener { e ->
+                Log.e(SmartCartLogTags.CART, "disconnect_current_query_failed userId=${user.uid}", e)
                 onError(e.message ?: "Failed to find connected cart")
             }
     }

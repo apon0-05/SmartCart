@@ -13,7 +13,20 @@
           "package_name": "com.example.smartcard"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1090740511419-3jujqbh89n71n85ounu3kfrt5gvmiqn5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smartcard",
+            "certificate_hash": "8ee5926744cd8e87c7bceafafc4f010987fb7657"
+          }
+        },
+        {
+          "client_id": "1090740511419-bo6team9gnufaaesjcieo15rciq4lbjk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBWFSzgrPGQQIpJgf8YoDIcFQA8T0LgONo"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1090740511419-bo6team9gnufaaesjcieo15rciq4lbjk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -32,7 +50,12 @@
           "package_name": "com.smartcart"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1090740511419-bo6team9gnufaaesjcieo15rciq4lbjk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBWFSzgrPGQQIpJgf8YoDIcFQA8T0LgONo"
@@ -40,7 +63,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1090740511419-bo6team9gnufaaesjcieo15rciq4lbjk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -1,20 +1,35 @@
 package com.example.smartcard
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartcard.localization.LocalAppStrings
 
 @Composable
 fun SuccessPaymentScreen(
@@ -22,87 +37,125 @@ fun SuccessPaymentScreen(
     onDownloadReceipt: (String) -> Unit,
     onBackHome: () -> Unit
 ) {
+    val texts = LocalAppStrings.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.Background)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        Spacer(Modifier.height(32.dp))
-
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(AppColors.SuccessBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                tint = AppColors.Success,
-                modifier = androidx.compose.ui.Modifier.size(60.dp)
-            )
+        Row(modifier = Modifier.fillMaxWidth()) {
+            AppBackButton(onClick = onBackHome)
         }
-
-        Spacer(Modifier.height(24.dp))
-
-        Text(
-            text = "Payment Successful",
-            color = AppColors.TextDark,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 24.sp
-        )
 
         Spacer(Modifier.height(8.dp))
 
-        Text(
-            text = "Your purchase has been completed",
-            color = AppColors.TextHint,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(Modifier.height(28.dp))
-
         Column(
-            modifier = androidx.compose.ui.Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .clip(AppRadius.Large)
-                .background(AppColors.Surface)
-                .padding(16.dp)
+                .weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Purchase ID", color = AppColors.TextHint, fontSize = 12.sp)
-            Spacer(Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(170.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                AppColors.Primary.copy(alpha = 0.20f),
+                                AppColors.Primary.copy(alpha = 0.06f),
+                                Color.Transparent
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(122.dp)
+                        .clip(CircleShape)
+                        .background(AppColors.Primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_success_check),
+                        contentDescription = null,
+                        modifier = Modifier.size(62.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
             Text(
-                text = if (receiptId.isNotBlank()) receiptId else "Not available",
+                text = texts.successful,
                 color = AppColors.TextDark,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 30.sp,
+                lineHeight = 34.sp,
+                letterSpacing = 0.15.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = texts.paymentSuccessDesc,
+                color = AppColors.TextHint,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp,
+                letterSpacing = 0.1.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
-        Spacer(Modifier.height(24.dp))
-
-        PrimaryButton(
-            text = "View Receipt",
-            enabled = receiptId.isNotBlank(),
-            onClick = { onDownloadReceipt(receiptId) }
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedButton(
-            onClick = onBackHome,
-            modifier = androidx.compose.ui.Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = AppRadius.Medium,
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.Primary),
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, AppColors.Primary)
+                .height(54.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(AppColors.PrimaryLight, AppColors.Primary)
+                    )
+                )
+                .clickable(enabled = receiptId.isNotBlank()) {
+                    onDownloadReceipt(receiptId)
+                },
+            contentAlignment = Alignment.Center
         ) {
-            Text("Back to Home", fontWeight = FontWeight.Bold)
+            Text(
+                text = texts.downloadReceipt,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                letterSpacing = 0.1.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
+
+        if (receiptId.isBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = texts.receiptUnavailable,
+                color = AppColors.Error,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
     }
 }

@@ -9,26 +9,27 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.smartcard.localization.LocalAppStrings
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartcard.viewmodel.ScanViewModel
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
 
 @OptIn(ExperimentalGetImage::class)
@@ -37,13 +38,25 @@ fun CameraScreen(
     onBack: () -> Unit,
     onProductFoundGoCart: () -> Unit
 ) {
+    val vm: ScanViewModel = viewModel()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val texts = LocalAppStrings.current
+    val scanning by vm.scanning.collectAsState()
+    val productName by vm.productMessage.collectAsState()
+    val navigateToCart by vm.navigateToCart.collectAsState()
 
-    var productName by remember { mutableStateOf<String?>(null) }
-    var scanning by remember { mutableStateOf(true) }
+    LaunchedEffect(texts) {
+        vm.updateStrings(texts)
+    }
 
-    val db = FirebaseFirestore.getInstance()
+    LaunchedEffect(navigateToCart) {
+        if (navigateToCart) {
+            delay(600)
+            onProductFoundGoCart()
+            vm.onNavigationHandled()
+        }
+    }
 
     var hasPermission by remember {
         mutableStateOf(
@@ -68,36 +81,17 @@ fun CameraScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A))
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .background(AppColors.DarkSurface)
+            .padding(12.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AppBackButton(onClick = onBack)
-            Spacer(Modifier.width(12.dp))
-            Text(
-                "Scan Product",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
+        TextButton(onClick = onBack) {
+            Text(texts.back, color = AppColors.OnDark)
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         if (!hasPermission) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Camera permission required",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(texts.cameraPermissionRequired, color = AppColors.OnDark)
             return@Column
         }
 
@@ -105,11 +99,10 @@ fun CameraScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .clip(RoundedCornerShape(16.dp))
         ) {
             AndroidView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(AppRadius.Large),
+                modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
                     val previewView = PreviewView(ctx)
                     val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
@@ -142,74 +135,34 @@ fun CameraScreen(
                                     scanner.process(image)
                                         .addOnSuccessListener { barcodes ->
                                             for (barcode in barcodes) {
-                                                val value = barcode.rawValue
-                                                if (value != null) {
-                                                    scanning = false
+                                                val value = barcode.rawValue?.trim()
+                                                if (!value.isNullOrBlank()) {
+                                                    QrFlowPhoneLog.d(
+                                                        event = "PRODUCT_SCAN_RAW",
+                                                        "raw" to value
+                                                    )
 
-                                                    db.collection("products")
-                                                        .whereEqualTo("barcode", value)
-                                                        .get()
-                                                        .addOnSuccessListener { result ->
-                                                            if (!result.isEmpty) {
-                                                                val document = result.documents[0]
-
-                                                                val product = Product(
-                                                                    name = document.getString("name")
-                                                                        ?: "",
-                                                                    brand = document.getString("brand")
-                                                                        ?: "",
-                                                                    price = document.getDouble("price")
-                                                                        ?: 0.0,
-                                                                    barcode = document.getString("barcode")
-                                                                        ?: ""
-                                                                )
-
-                                                                val emoji = when (product.barcode) {
-                                                                    "1234567890123" -> "🥛"
-                                                                    "1234567890179" -> "🧼"
-                                                                    "1234567890155" -> "🥔"
-                                                                    else -> "🛍️"
-                                                                }
-
-                                                                val connectedCartId = CartConnectionSession.connectedCartId
-
-                                                                if (!connectedCartId.isNullOrBlank()) {
-                                                                    RemoteCartRepository.addProductToRemoteCart(
-                                                                        cartId = connectedCartId,
-                                                                        product = product.copy(), // если надо, можно просто product
-                                                                        onSuccess = {
-                                                                            productName = product.name
-                                                                            onProductFoundGoCart()
-                                                                        },
-                                                                        onError = { error ->
-                                                                            productName = "Error: $error"
-                                                                            scanning = true
-                                                                        }
-                                                                    )
-                                                                } else {
-                                                                    CartSession.addOrIncrement(
-                                                                        CartItem(
-                                                                            barcode = product.barcode,
-                                                                            name = product.name,
-                                                                            brand = product.brand,
-                                                                            price = product.price.toInt()
-                                                                                .toDouble(),
-                                                                            imageEmoji = emoji
-                                                                        )
-                                                                    )
-
-                                                                    productName = product.name
-                                                                    onProductFoundGoCart()
-                                                                }
-                                                            } else {
-                                                                productName = "Not found"
-                                                                scanning = true
-                                                            }
+                                                    when (ScanPayloadClassifier.classify(value)) {
+                                                        ScanPayloadType.CART_QR_OR_SESSION -> {
+                                                            QrFlowPhoneLog.d(
+                                                                event = "PRODUCT_SCAN_CLASSIFIED",
+                                                                "kind" to "CART_QR_OR_SESSION",
+                                                                "raw" to value
+                                                            )
+                                                            vm.showMessage(texts.productBarcodeMismatch, resumeScanning = true)
+                                                            break
                                                         }
-                                                        .addOnFailureListener {
-                                                            productName = "Error: ${it.message}"
-                                                            scanning = true
+
+                                                        ScanPayloadType.PRODUCT_BARCODE -> {
+                                                            QrFlowPhoneLog.d(
+                                                                event = "PRODUCT_SCAN_CLASSIFIED",
+                                                                "kind" to "PRODUCT_BARCODE",
+                                                                "raw" to value
+                                                            )
                                                         }
+                                                    }
+
+                                                    vm.onBarcodeScanned(value)
 
                                                     break
                                                 }
@@ -226,6 +179,7 @@ fun CameraScreen(
                                 }
                             }
                         }
+////////////
 
                         try {
                             cameraProvider.unbindAll()
@@ -244,52 +198,90 @@ fun CameraScreen(
                 }
             )
 
-            // Scan frame overlay
-            Box(
+            Image(
+                painter = painterResource(id = R.drawable.ic_scan_overlay),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    .size(200.dp)
                     .align(Alignment.Center)
-                    .border(
-                        width = 2.dp,
-                        color = AppColors.Primary,
-                        shape = AppRadius.Large
-                    )
+                    .fillMaxWidth(0.88f)
+                    .padding(horizontal = 8.dp)
             )
+
+            if (!scanning && !navigateToCart) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.6f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(color = AppColors.OnDark)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = texts.loading,
+                            color = AppColors.OnDark,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            if (navigateToCart) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF163A2B)),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Added to cart",
+                                color = Color(0xFF6DFF9A)
+                            )
+                            productName?.takeIf { it.isNotBlank() }?.let { message ->
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = message,
+                                    color = AppColors.OnDark,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Point the camera at a product barcode",
-            color = Color.White.copy(alpha = 0.8f),
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
+            text = texts.cameraPointToProduct,
+            modifier = Modifier.fillMaxWidth(),
+            color = AppColors.OnDark,
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        productName?.let { name ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(AppRadius.Large)
-                    .background(AppColors.Surface)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
+        productName?.let {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = AppColors.Surface)
             ) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = if (name.startsWith("Error") || name == "Not found") AppColors.Error else AppColors.Success,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(Modifier.width(12.dp))
                 Text(
-                    text = name,
-                    color = AppColors.TextDark,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
+                    text = "${texts.productLabel}: $it",
+                    modifier = Modifier.padding(16.dp),
+                    color = AppColors.TextDark
                 )
             }
         }
